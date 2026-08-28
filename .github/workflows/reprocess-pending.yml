@@ -1,0 +1,33 @@
+name: Reprocessar licitações pendentes (PNCP)
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: reprocess-pending
+  cancel-in-progress: false
+
+jobs:
+  reprocess:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    defaults:
+      run:
+        working-directory: etl
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Reprocessar licitações sem resultado
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MAX_RUNTIME_SECONDS: "9000"
+        run: python run_reprocess.py
