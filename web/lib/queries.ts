@@ -3,6 +3,7 @@ import { pool } from "./db";
 export interface Filtros {
   q?: string;
   descricao?: string;
+  produto?: string;
   uf?: string;
   portal?: string;
   dataInicial?: string;
@@ -24,6 +25,7 @@ export interface ResultadoLinha {
   data_publicacao_pncp: string | null;
   numero_item: number;
   descricao_item: string;
+  produto: string | null;
   ni_fornecedor: string;
   nome_razao_social: string;
   valor_unitario_homologado: number | null;
@@ -68,6 +70,10 @@ function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
     params.push(`%${filtros.descricao}%`);
     condicoes.push(`i.descricao_item ILIKE $${params.length}`);
   }
+  if (filtros.produto) {
+    params.push(`%${filtros.produto}%`);
+    condicoes.push(`i.produto ILIKE $${params.length}`);
+  }
   if (filtros.uf) {
     params.push(filtros.uf.toUpperCase());
     condicoes.push(`l.uf = $${params.length}`);
@@ -102,6 +108,7 @@ const SELECT_COLUNAS = `
   l.data_publicacao_pncp,
   i.numero_item,
   i.descricao_item,
+  i.produto,
   r.ni_fornecedor,
   r.nome_razao_social,
   r.valor_unitario_homologado,

@@ -18,6 +18,7 @@ function lerFiltros(sp: URLSearchParams) {
   return {
     q: sp.get("q") ?? undefined,
     descricao: sp.get("descricao") ?? undefined,
+    produto: sp.get("produto") ?? undefined,
     uf: sp.get("uf") ?? undefined,
     portal: sp.get("portal") ?? undefined,
     dataInicial: sp.get("dataInicial") ?? undefined,
@@ -32,6 +33,7 @@ const COLUNAS_EXPORT: { titulo: string; valor: (l: ResultadoLinha) => string | n
   { titulo: "UF", valor: (l) => l.uf ?? "" },
   { titulo: "Município", valor: (l) => l.municipio ?? "" },
   { titulo: "Portal", valor: (l) => l.portal ?? "Não encontrado" },
+  { titulo: "Produto", valor: (l) => l.produto ?? "" },
   { titulo: "Descrição do item", valor: (l) => l.descricao_item ?? "" },
   { titulo: "Valor unitário homologado", valor: (l) => (l.valor_unitario_homologado ?? "") as number },
   { titulo: "Data de divulgação no PNCP", valor: (l) => formatarDataIso(l.data_publicacao_pncp) },

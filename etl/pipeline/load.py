@@ -13,7 +13,7 @@ e quase sempre resolvidos pelo cache depois das primeiras linhas."""
 import psycopg
 
 import config
-from pipeline.normalize import clean_cnpj, parse_bool, parse_date, parse_decimal, parse_int
+from pipeline.normalize import clean_cnpj, extrair_produto, parse_bool, parse_date, parse_decimal, parse_int
 
 _TAMANHO_LOTE = 1000
 
@@ -174,13 +174,14 @@ def upsert_licitacoes_lote(conn: psycopg.Connection, linhas, cache_orgao: dict, 
 
 _ITEM_INSERT = """
     INSERT INTO itens (
-        licitacao_id, numero_item, descricao_item, material_ou_servico, quantidade,
+        licitacao_id, numero_item, descricao_item, produto, material_ou_servico, quantidade,
         unidade_medida, valor_unitario_estimado, valor_total_estimado,
         situacao_item_id, situacao_item_nome, tem_resultado
     )
 """
 _ITEM_CONFLITO = """
     ON CONFLICT (licitacao_id, numero_item) DO UPDATE SET
+        produto = EXCLUDED.produto,
         situacao_item_id = EXCLUDED.situacao_item_id,
         situacao_item_nome = EXCLUDED.situacao_item_nome,
         tem_resultado = EXCLUDED.tem_resultado
@@ -208,6 +209,7 @@ def upsert_itens_lote(conn: psycopg.Connection, linhas, cache_licitacao: dict) -
             licitacao_id,
             numero_item,
             descricao,
+            extrair_produto(descricao),
             row.get("material_ou_servico"),
             parse_decimal(row.get("quantidade")),
             row.get("unidade_medida"),
@@ -218,11 +220,11 @@ def upsert_itens_lote(conn: psycopg.Connection, linhas, cache_licitacao: dict) -
             parse_bool(row.get("tem_resultado")) or False,
         )
         if len(lote) >= _TAMANHO_LOTE:
-            resultado.update(_inserir_lote(conn, _ITEM_INSERT, _ITEM_CONFLITO, 11, lote))
+            resultado.update(_inserir_lote(conn, _ITEM_INSERT, _ITEM_CONFLITO, 12, lote))
             conn.commit()
             lote = {}
     if lote:
-        resultado.update(_inserir_lote(conn, _ITEM_INSERT, _ITEM_CONFLITO, 11, lote))
+        resultado.update(_inserir_lote(conn, _ITEM_INSERT, _ITEM_CONFLITO, 12, lote))
         conn.commit()
     print(f"itens: {len(resultado)}/{total} linhas carregadas")
     return resultado

@@ -41,6 +41,7 @@ export default async function Home({
   const filtros = {
     q: searchParams.q,
     descricao: searchParams.descricao,
+    produto: searchParams.produto,
     uf: searchParams.uf,
     portal: searchParams.portal,
     dataInicial: searchParams.dataInicial,
@@ -55,6 +56,7 @@ export default async function Home({
   const paramsBase = new URLSearchParams();
   if (searchParams.q) paramsBase.set("q", searchParams.q);
   if (searchParams.descricao) paramsBase.set("descricao", searchParams.descricao);
+  if (searchParams.produto) paramsBase.set("produto", searchParams.produto);
   if (searchParams.uf) paramsBase.set("uf", searchParams.uf);
   if (searchParams.portal) paramsBase.set("portal", searchParams.portal);
   if (searchParams.dataInicial) paramsBase.set("dataInicial", searchParams.dataInicial);
@@ -68,11 +70,8 @@ export default async function Home({
 
   return (
     <main>
-      <h1>Radar de Licitações</h1>
-      <p className="subtitulo">
-        Vencedores homologados no PNCP — CNPJ, valor unitário e data. Sem dados de marca (o PNCP não
-        registra esse campo estruturado); use o link para o edital quando precisar conferir.
-      </p>
+      <h1>Análise de Mercado - À Frente Soluções</h1>
+      <p className="subtitulo">Vencedores homologados no site PNCP.</p>
 
       <form className="filtros" method="get">
         <input type="text" name="q" placeholder="Empresa ou CNPJ" defaultValue={searchParams.q ?? ""} />
@@ -81,6 +80,12 @@ export default async function Home({
           name="descricao"
           placeholder="Descrição do produto/serviço"
           defaultValue={searchParams.descricao ?? ""}
+        />
+        <input
+          type="text"
+          name="produto"
+          placeholder="Produto (ex: notebook, nobreak)"
+          defaultValue={searchParams.produto ?? ""}
         />
         <input type="text" name="uf" placeholder="UF" maxLength={2} defaultValue={searchParams.uf ?? ""} />
         <input type="text" name="portal" placeholder="Portal" defaultValue={searchParams.portal ?? ""} />
@@ -103,7 +108,8 @@ export default async function Home({
             <th>Órgão</th>
             <th>UF</th>
             <th>Portal</th>
-            <th>Item</th>
+            <th>Produto</th>
+            <th>Descrição</th>
             <th>Valor unitário homologado</th>
             <th>Data de divulgação no PNCP</th>
             <th>Licitação</th>
@@ -117,6 +123,7 @@ export default async function Home({
               <td>{l.orgao_nome}</td>
               <td>{l.uf}</td>
               <td>{l.portal ?? "Não encontrado"}</td>
+              <td>{l.produto ?? "—"}</td>
               <td>{l.descricao_item}</td>
               <td>{formatarMoeda(l.valor_unitario_homologado)}</td>
               <td>{formatarData(l.data_publicacao_pncp)}</td>
@@ -129,7 +136,7 @@ export default async function Home({
           ))}
           {linhas.length === 0 && (
             <tr>
-              <td colSpan={9}>Nenhum resultado encontrado para esses filtros.</td>
+              <td colSpan={10}>Nenhum resultado encontrado para esses filtros.</td>
             </tr>
           )}
         </tbody>
@@ -153,6 +160,7 @@ export default async function Home({
         <form className="ir-para-pagina" method="get">
           {searchParams.q && <input type="hidden" name="q" value={searchParams.q} />}
           {searchParams.descricao && <input type="hidden" name="descricao" value={searchParams.descricao} />}
+          {searchParams.produto && <input type="hidden" name="produto" value={searchParams.produto} />}
           {searchParams.uf && <input type="hidden" name="uf" value={searchParams.uf} />}
           {searchParams.portal && <input type="hidden" name="portal" value={searchParams.portal} />}
           {searchParams.dataInicial && <input type="hidden" name="dataInicial" value={searchParams.dataInicial} />}

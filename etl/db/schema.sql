@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS itens (
   licitacao_id BIGINT NOT NULL REFERENCES licitacoes(id),
   numero_item INT NOT NULL,
   descricao_item TEXT,
+  produto TEXT,
   material_ou_servico VARCHAR(2),
   quantidade NUMERIC,
   unidade_medida TEXT,
@@ -72,7 +73,17 @@ CREATE TABLE IF NOT EXISTS itens (
   criado_em TIMESTAMP NOT NULL DEFAULT now(),
   UNIQUE (licitacao_id, numero_item)
 );
-CREATE INDEX IF NOT EXISTS idx_itens_descricao_trgm ON itens USING gin (descricao_item gin_trgm_ops);
+-- CREATE TABLE IF NOT EXISTS não adiciona coluna em tabela já existente -
+-- precisa do ALTER explícito pra bases que já tinham 'itens' antes desta coluna.
+ALTER TABLE itens ADD COLUMN IF NOT EXISTS produto TEXT;
+CREATE INDEX IF NOT EXISTS idx_itens_produto_trgm ON itens USING gin (produto gin_trgm_ops);
+-- Indexar descricao_item (texto longo, livre) em trigram custava 84MB -
+-- mais que o dobro do dado em si - e quase estourou os 512MB do plano
+-- gratuito do Neon. 'produto' (extraido de descricao_item, bem mais curto)
+-- cobre a maioria das buscas por um custo bem menor (10MB) - a busca por
+-- descrição completa segue funcionando, só sem esse índice (sequential
+-- scan, mais lenta, mas aceitável pro volume atual).
+DROP INDEX IF EXISTS idx_itens_descricao_trgm;
 
 -- Núcleo do produto: o(s) vencedor(es) homologado(s) de cada item.
 -- Normalmente 1 linha por item, mas em Registro de Preços pode haver mais de um

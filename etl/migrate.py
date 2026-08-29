@@ -1,6 +1,7 @@
-"""Aplica db/schema.sql (idempotente - so CREATE TABLE/INDEX IF NOT EXISTS).
-Rodado automaticamente no inicio de todo ingest/reprocess, pra nao depender
-do usuario lembrar de rodar uma migracao manual."""
+"""Aplica db/schema.sql (idempotente - cada statement deve poder rodar
+repetidas vezes sem erro: CREATE ... IF NOT EXISTS, ALTER ... ADD COLUMN
+IF NOT EXISTS, DROP ... IF EXISTS). Rodado automaticamente no inicio de
+todo ingest/backfill, pra nao depender do usuario lembrar de migrar."""
 
 from pathlib import Path
 
@@ -11,7 +12,10 @@ SCHEMA_PATH = Path(__file__).parent / "db" / "schema.sql"
 
 def run() -> None:
     sql = SCHEMA_PATH.read_text(encoding="utf-8")
-    statements = [s.strip() for s in sql.split(";") if s.strip()]
+    # Remove comentarios de linha antes de dividir por ";" - o split e
+    # ingenuo e um ";" dentro de um comentario quebraria a divisao.
+    sem_comentarios = "\n".join(linha.split("--", 1)[0] for linha in sql.splitlines())
+    statements = [s.strip() for s in sem_comentarios.split(";") if s.strip()]
     with get_conn() as conn:
         for statement in statements:
             conn.execute(statement)
