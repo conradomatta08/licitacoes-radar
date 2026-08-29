@@ -12,6 +12,7 @@ docs em C:\\Users\\conra\\.claude\\plans\\humming-inventing-fern.md):
 - A API ja se mostrou instavel (503 em rajada) - todo GET tem retry/backoff.
 """
 
+import json
 import time
 
 import httpx
@@ -34,21 +35,29 @@ def _client() -> httpx.Client:
     reraise=True,
     stop=stop_after_attempt(5),
     wait=wait_exponential(multiplier=1, min=2, max=60),
-    retry=retry_if_exception_type(httpx.HTTPStatusError) | retry_if_exception_type(httpx.TransportError),
+    retry=(
+        retry_if_exception_type(httpx.HTTPStatusError)
+        | retry_if_exception_type(httpx.TransportError)
+        | retry_if_exception_type(json.JSONDecodeError)
+    ),
 )
-def _get(url: str, params: dict | None = None) -> httpx.Response:
+def _get_json(url: str, params: dict | None = None):
+    """GET + parse JSON. Durante instabilidade o PNCP as vezes devolve
+    200 com corpo vazio/invalido - tratamos isso como transiente e
+    tentamos de novo, igual a um 5xx, em vez de deixar o JSONDecodeError
+    derrubar o processo inteiro."""
     time.sleep(REQUEST_DELAY_SECONDS)
     with _client() as client:
         resp = client.get(url, params=params)
         if resp.status_code == 404:
             raise PncpNotFound(url)
         resp.raise_for_status()
-        return resp
+        return resp.json()
 
 
 def _get_json_or_default(url: str, params: dict | None, default):
     try:
-        return _get(url, params).json()
+        return _get_json(url, params)
     except PncpNotFound:
         return default
 
@@ -63,8 +72,7 @@ def listar_contratacoes_publicadas(data_inicial: str, data_final: str, modalidad
         "pagina": pagina,
         "tamanhoPagina": tamanho_pagina,
     }
-    resp = _get(url, params)
-    return resp.json()
+    return _get_json(url, params)
 
 
 def listar_contratacoes_atualizadas(data_inicial: str, data_final: str, modalidade: int, pagina: int, tamanho_pagina: int) -> dict:
@@ -76,8 +84,7 @@ def listar_contratacoes_atualizadas(data_inicial: str, data_final: str, modalida
         "pagina": pagina,
         "tamanhoPagina": tamanho_pagina,
     }
-    resp = _get(url, params)
-    return resp.json()
+    return _get_json(url, params)
 
 
 def listar_itens(cnpj: str, ano: int, sequencial: int) -> list[dict]:
