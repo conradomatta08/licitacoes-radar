@@ -2,7 +2,9 @@ import { pool } from "./db";
 
 export interface Filtros {
   q?: string;
+  descricao?: string;
   uf?: string;
+  portal?: string;
   dataInicial?: string;
   dataFinal?: string;
   pagina: number;
@@ -18,8 +20,8 @@ export interface ResultadoLinha {
   uf: string;
   municipio: string;
   modalidade_nome: string;
+  portal: string | null;
   data_publicacao_pncp: string | null;
-  data_resultado: string | null;
   numero_item: number;
   descricao_item: string;
   ni_fornecedor: string;
@@ -29,7 +31,27 @@ export interface ResultadoLinha {
   link_pncp: string;
 }
 
-function montarFiltros(filtros: Filtros) {
+// Extrai um nome de portal a partir da URL do sistema de origem (campo
+// "Fonte" no PNCP): tira protocolo/www, pega so o dominio. "www.gov.br/compras"
+// (sem protocolo, como o Compras.gov.br as vezes exporta) vira "gov.br" pelo
+// mesmo regex, entao normalizamos esse caso pro nome oficial do portal.
+const PORTAL_EXPR = `
+  CASE
+    WHEN l.link_sistema_origem IS NULL OR l.link_sistema_origem = '' THEN NULL
+    WHEN regexp_replace(l.link_sistema_origem, '^(?:https?://)?(?:www\\.)?([^/]+).*$', '\\1') = 'gov.br'
+      THEN 'Compras.gov.br'
+    ELSE regexp_replace(l.link_sistema_origem, '^(?:https?://)?(?:www\\.)?([^/]+).*$', '\\1')
+  END
+`;
+
+const FROM_JOINS = `
+  FROM resultados_item r
+  JOIN itens i ON i.id = r.item_id
+  JOIN licitacoes l ON l.id = i.licitacao_id
+  JOIN orgaos o ON o.id = l.orgao_id
+`;
+
+function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
   const condicoes: string[] = [];
   const params: unknown[] = [];
 
@@ -38,9 +60,17 @@ function montarFiltros(filtros: Filtros) {
     const idx = params.length;
     condicoes.push(`(r.nome_razao_social ILIKE $${idx} OR r.ni_fornecedor ILIKE $${idx} OR o.razao_social ILIKE $${idx})`);
   }
+  if (filtros.descricao) {
+    params.push(`%${filtros.descricao}%`);
+    condicoes.push(`i.descricao_item ILIKE $${params.length}`);
+  }
   if (filtros.uf) {
     params.push(filtros.uf.toUpperCase());
     condicoes.push(`l.uf = $${params.length}`);
+  }
+  if (filtros.portal) {
+    params.push(`%${filtros.portal}%`);
+    condicoes.push(`(${PORTAL_EXPR}) ILIKE $${params.length}`);
   }
   if (filtros.dataInicial) {
     params.push(filtros.dataInicial);
@@ -55,17 +85,32 @@ function montarFiltros(filtros: Filtros) {
   return { where, params };
 }
 
+const SELECT_COLUNAS = `
+  r.id AS resultado_id,
+  l.id AS licitacao_id,
+  l.numero_controle_pncp,
+  l.objeto_compra,
+  o.razao_social AS orgao_nome,
+  l.uf,
+  u.municipio,
+  l.modalidade_nome,
+  (${PORTAL_EXPR}) AS portal,
+  l.data_publicacao_pncp,
+  i.numero_item,
+  i.descricao_item,
+  r.ni_fornecedor,
+  r.nome_razao_social,
+  r.valor_unitario_homologado,
+  r.quantidade_homologada,
+  l.link_pncp
+`;
+
+const ORDER_BY = "ORDER BY l.data_publicacao_pncp DESC NULLS LAST, r.id DESC";
+
 export async function buscarResultados(filtros: Filtros): Promise<{ linhas: ResultadoLinha[]; total: number }> {
   const { where, params } = montarFiltros(filtros);
 
-  const totalRes = await pool.query(
-    `SELECT count(*) FROM resultados_item r
-     JOIN itens i ON i.id = r.item_id
-     JOIN licitacoes l ON l.id = i.licitacao_id
-     JOIN orgaos o ON o.id = l.orgao_id
-     ${where}`,
-    params
-  );
+  const totalRes = await pool.query(`SELECT count(*) ${FROM_JOINS} ${where}`, params);
   const total = parseInt(totalRes.rows[0].count, 10);
 
   const dataParams = [...params];
@@ -75,31 +120,11 @@ export async function buscarResultados(filtros: Filtros): Promise<{ linhas: Resu
   const offsetIdx = dataParams.length;
 
   const dataRes = await pool.query(
-    `SELECT
-        r.id AS resultado_id,
-        l.id AS licitacao_id,
-        l.numero_controle_pncp,
-        l.objeto_compra,
-        o.razao_social AS orgao_nome,
-        l.uf,
-        u.municipio,
-        l.modalidade_nome,
-        l.data_publicacao_pncp,
-        r.data_resultado,
-        i.numero_item,
-        i.descricao_item,
-        r.ni_fornecedor,
-        r.nome_razao_social,
-        r.valor_unitario_homologado,
-        r.quantidade_homologada,
-        l.link_pncp
-     FROM resultados_item r
-     JOIN itens i ON i.id = r.item_id
-     JOIN licitacoes l ON l.id = i.licitacao_id
-     JOIN orgaos o ON o.id = l.orgao_id
+    `SELECT ${SELECT_COLUNAS}
+     ${FROM_JOINS}
      LEFT JOIN unidades_orgao u ON u.id = l.unidade_id
      ${where}
-     ORDER BY r.data_resultado DESC NULLS LAST, r.id DESC
+     ${ORDER_BY}
      LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
     dataParams
   );
@@ -107,48 +132,26 @@ export async function buscarResultados(filtros: Filtros): Promise<{ linhas: Resu
   return { linhas: dataRes.rows as ResultadoLinha[], total };
 }
 
-export interface ItemDetalhe {
-  id: number;
-  numero_item: number;
-  descricao_item: string;
-  vencedor_nome: string | null;
-  vencedor_cnpj: string | null;
-  valor_unitario_homologado: number | null;
-  data_resultado: string | null;
-}
+// Exportação (CSV/XLSX): mesmos filtros, sem paginação. Limitada por
+// segurança - com filtros mais específicos dá pra exportar o recorte
+// inteiro; sem filtro, o teto evita uma consulta/arquivo gigantes demais
+// pra uma função serverless.
+const LIMITE_EXPORT = 200_000;
 
-export interface LicitacaoDetalhe {
-  id: number;
-  objeto_compra: string;
-  orgao_nome: string;
-  municipio: string | null;
-  uf: string | null;
-  modalidade_nome: string | null;
-  link_pncp: string | null;
-  itens: ItemDetalhe[];
-}
+export async function buscarResultadosParaExport(filtros: Omit<Filtros, "pagina" | "porPagina">): Promise<{ linhas: ResultadoLinha[]; truncado: boolean }> {
+  const { where, params } = montarFiltros(filtros);
+  const dataParams = [...params, LIMITE_EXPORT + 1];
 
-export async function buscarLicitacaoDetalhe(id: number): Promise<LicitacaoDetalhe | null> {
-  const licRes = await pool.query(
-    `SELECT l.id, l.objeto_compra, o.razao_social AS orgao_nome, u.municipio, l.uf, l.modalidade_nome, l.link_pncp
-     FROM licitacoes l
-     JOIN orgaos o ON o.id = l.orgao_id
+  const res = await pool.query(
+    `SELECT ${SELECT_COLUNAS}
+     ${FROM_JOINS}
      LEFT JOIN unidades_orgao u ON u.id = l.unidade_id
-     WHERE l.id = $1`,
-    [id]
-  );
-  if (licRes.rows.length === 0) return null;
-  const lic = licRes.rows[0];
-
-  const itensRes = await pool.query(
-    `SELECT i.id, i.numero_item, i.descricao_item, r.nome_razao_social AS vencedor_nome,
-            r.ni_fornecedor AS vencedor_cnpj, r.valor_unitario_homologado, r.data_resultado
-     FROM itens i
-     LEFT JOIN resultados_item r ON r.item_id = i.id
-     WHERE i.licitacao_id = $1
-     ORDER BY i.numero_item`,
-    [id]
+     ${where}
+     ${ORDER_BY}
+     LIMIT $${dataParams.length}`,
+    dataParams
   );
 
-  return { ...lic, itens: itensRes.rows } as LicitacaoDetalhe;
+  const truncado = res.rows.length > LIMITE_EXPORT;
+  return { linhas: (truncado ? res.rows.slice(0, LIMITE_EXPORT) : res.rows) as ResultadoLinha[], truncado };
 }

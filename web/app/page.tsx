@@ -20,7 +20,9 @@ export default async function Home({
   const pagina = Math.max(1, parseInt(searchParams.pagina ?? "1", 10) || 1);
   const filtros = {
     q: searchParams.q,
+    descricao: searchParams.descricao,
     uf: searchParams.uf,
+    portal: searchParams.portal,
     dataInicial: searchParams.dataInicial,
     dataFinal: searchParams.dataFinal,
     pagina,
@@ -32,12 +34,15 @@ export default async function Home({
 
   const paramsBase = new URLSearchParams();
   if (searchParams.q) paramsBase.set("q", searchParams.q);
+  if (searchParams.descricao) paramsBase.set("descricao", searchParams.descricao);
   if (searchParams.uf) paramsBase.set("uf", searchParams.uf);
+  if (searchParams.portal) paramsBase.set("portal", searchParams.portal);
   if (searchParams.dataInicial) paramsBase.set("dataInicial", searchParams.dataInicial);
   if (searchParams.dataFinal) paramsBase.set("dataFinal", searchParams.dataFinal);
   const baseQs = paramsBase.toString();
 
-  const csvHref = `/api/licitacoes?${baseQs}${baseQs ? "&" : ""}pagina=${pagina}&format=csv`;
+  const csvHref = `/api/licitacoes?${baseQs}${baseQs ? "&" : ""}format=csv`;
+  const xlsxHref = `/api/licitacoes?${baseQs}${baseQs ? "&" : ""}format=xlsx`;
   const prevHref = `/?${baseQs}${baseQs ? "&" : ""}pagina=${pagina - 1}`;
   const nextHref = `/?${baseQs}${baseQs ? "&" : ""}pagina=${pagina + 1}`;
 
@@ -51,7 +56,14 @@ export default async function Home({
 
       <form className="filtros" method="get">
         <input type="text" name="q" placeholder="Empresa ou CNPJ" defaultValue={searchParams.q ?? ""} />
+        <input
+          type="text"
+          name="descricao"
+          placeholder="Descrição do produto/serviço"
+          defaultValue={searchParams.descricao ?? ""}
+        />
         <input type="text" name="uf" placeholder="UF" maxLength={2} defaultValue={searchParams.uf ?? ""} />
+        <input type="text" name="portal" placeholder="Portal" defaultValue={searchParams.portal ?? ""} />
         <input type="date" name="dataInicial" defaultValue={searchParams.dataInicial ?? ""} />
         <input type="date" name="dataFinal" defaultValue={searchParams.dataFinal ?? ""} />
         <button type="submit">Buscar</button>
@@ -59,7 +71,8 @@ export default async function Home({
 
       <div className="resumo">
         <span>{total.toLocaleString("pt-BR")} resultados</span>
-        <a href={csvHref}>Exportar CSV (página atual)</a>
+        <a href={csvHref}>Exportar tudo (CSV)</a>
+        <a href={xlsxHref}>Exportar tudo (XLSX, até 50 mil linhas)</a>
       </div>
 
       <table>
@@ -69,9 +82,10 @@ export default async function Home({
             <th>CNPJ</th>
             <th>Órgão</th>
             <th>UF</th>
+            <th>Portal</th>
             <th>Item</th>
             <th>Valor unitário homologado</th>
-            <th>Data do resultado</th>
+            <th>Data de divulgação no PNCP</th>
             <th>Licitação</th>
           </tr>
         </thead>
@@ -82,21 +96,20 @@ export default async function Home({
               <td>{l.ni_fornecedor}</td>
               <td>{l.orgao_nome}</td>
               <td>{l.uf}</td>
+              <td>{l.portal ?? "Não encontrado"}</td>
               <td>{l.descricao_item}</td>
               <td>{formatarMoeda(l.valor_unitario_homologado)}</td>
-              <td>{formatarData(l.data_resultado)}</td>
+              <td>{formatarData(l.data_publicacao_pncp)}</td>
               <td>
-                <a href={`/licitacao/${l.licitacao_id}`}>Todos os itens</a>
-                {" · "}
                 <a href={l.link_pncp} target="_blank" rel="noreferrer">
-                  PNCP
+                  Ver no PNCP
                 </a>
               </td>
             </tr>
           ))}
           {linhas.length === 0 && (
             <tr>
-              <td colSpan={8}>Nenhum resultado encontrado para esses filtros.</td>
+              <td colSpan={9}>Nenhum resultado encontrado para esses filtros.</td>
             </tr>
           )}
         </tbody>

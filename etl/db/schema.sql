@@ -4,6 +4,10 @@
 -- ver plano). "marca" não existe em nenhum campo estruturado do PNCP
 -- (confirmado no schema oficial IncluirCompraItemResultadoDTO e nos CSVs).
 
+-- pg_trgm acelera busca por trecho (ILIKE '%...%'), usada nos filtros de
+-- empresa/descrição do dashboard - um índice B-tree comum não serve pra isso.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 CREATE TABLE IF NOT EXISTS orgaos (
   id SERIAL PRIMARY KEY,
   cnpj VARCHAR(14) UNIQUE NOT NULL,
@@ -11,6 +15,7 @@ CREATE TABLE IF NOT EXISTS orgaos (
   poder_id VARCHAR(5),
   esfera_id VARCHAR(5)
 );
+CREATE INDEX IF NOT EXISTS idx_orgaos_razao_social_trgm ON orgaos USING gin (razao_social gin_trgm_ops);
 
 CREATE TABLE IF NOT EXISTS unidades_orgao (
   id SERIAL PRIMARY KEY,
@@ -67,6 +72,7 @@ CREATE TABLE IF NOT EXISTS itens (
   criado_em TIMESTAMP NOT NULL DEFAULT now(),
   UNIQUE (licitacao_id, numero_item)
 );
+CREATE INDEX IF NOT EXISTS idx_itens_descricao_trgm ON itens USING gin (descricao_item gin_trgm_ops);
 
 -- Núcleo do produto: o(s) vencedor(es) homologado(s) de cada item.
 -- Normalmente 1 linha por item, mas em Registro de Preços pode haver mais de um
@@ -89,4 +95,5 @@ CREATE TABLE IF NOT EXISTS resultados_item (
   UNIQUE (item_id, sequencial_resultado)
 );
 CREATE INDEX IF NOT EXISTS idx_resultados_cnpj ON resultados_item (ni_fornecedor);
-CREATE INDEX IF NOT EXISTS idx_resultados_nome ON resultados_item USING gin (to_tsvector('simple', coalesce(nome_razao_social, '')));
+CREATE INDEX IF NOT EXISTS idx_resultados_nome_trgm ON resultados_item USING gin (nome_razao_social gin_trgm_ops);
+DROP INDEX IF EXISTS idx_resultados_nome;
