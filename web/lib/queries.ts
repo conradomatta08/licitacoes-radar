@@ -31,16 +31,17 @@ export interface ResultadoLinha {
   link_pncp: string;
 }
 
-// Extrai um nome de portal a partir da URL do sistema de origem (campo
-// "Fonte" no PNCP): tira protocolo/www, pega so o dominio. Quando o PNCP
-// nao tem um sistema externo vinculado (link_sistema_origem vazio), a
-// propria pagina do PNCP mostra "Fonte: Compras.gov.br" - eh o portal
-// nativo/padrao, nao "nao encontrado". "www.gov.br/compras" (sem
-// protocolo, como o Compras.gov.br as vezes exporta) tambem vira "gov.br"
-// pelo regex, entao normalizamos esse caso pro nome oficial do portal.
+// Extrai um nome de portal a partir da URL do sistema de origem
+// (link_sistema_origem) - o campo "Fonte" do PNCP em si mostra sempre
+// "Compras.gov.br" (canal de integracao com o PNCP, nao o portal
+// especifico), entao nao serve pra identificar onde a licitacao tramitou;
+// link_sistema_origem eh o que realmente varia (site proprio do orgao,
+// ComprasNet, etc). Quando vazio, nao da pra saber - fica "Nao encontrado"
+// no app. "www.gov.br/compras" (sem protocolo, como o Compras.gov.br as
+// vezes exporta) vira "gov.br" pelo regex, entao normalizamos esse caso.
 const PORTAL_EXPR = `
   CASE
-    WHEN l.link_sistema_origem IS NULL OR l.link_sistema_origem = '' THEN 'Compras.gov.br'
+    WHEN l.link_sistema_origem IS NULL OR l.link_sistema_origem = '' THEN NULL
     WHEN regexp_replace(l.link_sistema_origem, '^(?:https?://)?(?:www\\.)?([^/]+).*$', '\\1') = 'gov.br'
       THEN 'Compras.gov.br'
     ELSE regexp_replace(l.link_sistema_origem, '^(?:https?://)?(?:www\\.)?([^/]+).*$', '\\1')

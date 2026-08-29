@@ -102,11 +102,58 @@ tr:last-child td {
 
 .paginacao {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
   justify-content: center;
   margin-top: 20px;
   font-size: 0.9rem;
+}
+
+.paginacao a {
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.paginacao a.pagina-atual {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+.paginacao .reticencias {
+  color: var(--muted);
+  padding: 0 2px;
+}
+
+.ir-para-pagina {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.ir-para-pagina label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ir-para-pagina input {
+  width: 70px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.ir-para-pagina button {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
 }
 
 a {

@@ -12,6 +12,26 @@ function formatarData(valor: string | null) {
   return new Date(valor).toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
+// Paginação com janela deslizante: sempre mostra a primeira e a última
+// página, mais uma janela ao redor da página atual, com "..." nos vãos.
+// Evita renderizar milhares de números quando há muitas páginas.
+function gerarPaginas(atual: number, total: number, janela = 2): (number | "...")[] {
+  const paginas = new Set<number>([1, total]);
+  for (let i = atual - janela; i <= atual + janela; i++) {
+    if (i >= 1 && i <= total) paginas.add(i);
+  }
+  const ordenadas = Array.from(paginas).sort((a, b) => a - b);
+
+  const resultado: (number | "...")[] = [];
+  let anterior: number | null = null;
+  for (const p of ordenadas) {
+    if (anterior !== null && p - anterior > 1) resultado.push("...");
+    resultado.push(p);
+    anterior = p;
+  }
+  return resultado;
+}
+
 export default async function Home({
   searchParams,
 }: {
@@ -43,8 +63,8 @@ export default async function Home({
 
   const csvHref = `/api/licitacoes?${baseQs}${baseQs ? "&" : ""}format=csv`;
   const xlsxHref = `/api/licitacoes?${baseQs}${baseQs ? "&" : ""}format=xlsx`;
-  const prevHref = `/?${baseQs}${baseQs ? "&" : ""}pagina=${pagina - 1}`;
-  const nextHref = `/?${baseQs}${baseQs ? "&" : ""}pagina=${pagina + 1}`;
+  const hrefPagina = (n: number) => `/?${baseQs}${baseQs ? "&" : ""}pagina=${n}`;
+  const paginasVisiveis = gerarPaginas(pagina, totalPaginas);
 
   return (
     <main>
@@ -116,11 +136,33 @@ export default async function Home({
       </table>
 
       <div className="paginacao">
-        {pagina > 1 && <a href={prevHref}>&larr; Anterior</a>}
-        <span>
-          Página {pagina} de {totalPaginas}
-        </span>
-        {pagina < totalPaginas && <a href={nextHref}>Próxima &rarr;</a>}
+        {pagina > 1 && <a href={hrefPagina(pagina - 1)}>&larr; Anterior</a>}
+        {paginasVisiveis.map((p, idx) =>
+          p === "..." ? (
+            <span key={`reticencias-${idx}`} className="reticencias">
+              …
+            </span>
+          ) : (
+            <a key={p} href={hrefPagina(p)} className={p === pagina ? "pagina-atual" : ""}>
+              {p}
+            </a>
+          )
+        )}
+        {pagina < totalPaginas && <a href={hrefPagina(pagina + 1)}>Próxima &rarr;</a>}
+
+        <form className="ir-para-pagina" method="get">
+          {searchParams.q && <input type="hidden" name="q" value={searchParams.q} />}
+          {searchParams.descricao && <input type="hidden" name="descricao" value={searchParams.descricao} />}
+          {searchParams.uf && <input type="hidden" name="uf" value={searchParams.uf} />}
+          {searchParams.portal && <input type="hidden" name="portal" value={searchParams.portal} />}
+          {searchParams.dataInicial && <input type="hidden" name="dataInicial" value={searchParams.dataInicial} />}
+          {searchParams.dataFinal && <input type="hidden" name="dataFinal" value={searchParams.dataFinal} />}
+          <label>
+            Ir para página
+            <input type="number" name="pagina" min={1} max={totalPaginas} defaultValue={pagina} />
+          </label>
+          <button type="submit">Ir</button>
+        </form>
       </div>
     </main>
   );
