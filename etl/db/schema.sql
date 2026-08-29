@@ -45,7 +45,6 @@ CREATE TABLE IF NOT EXISTS licitacoes (
   existe_resultado BOOLEAN,
   link_pncp TEXT,
   link_sistema_origem TEXT,
-  raw_payload JSONB,
   criado_em TIMESTAMP NOT NULL DEFAULT now(),
   atualizado_em TIMESTAMP NOT NULL DEFAULT now()
 );
@@ -65,7 +64,6 @@ CREATE TABLE IF NOT EXISTS itens (
   situacao_item_id INT,
   situacao_item_nome TEXT,
   tem_resultado BOOLEAN NOT NULL DEFAULT FALSE,
-  raw_payload JSONB,
   criado_em TIMESTAMP NOT NULL DEFAULT now(),
   UNIQUE (licitacao_id, numero_item)
 );
@@ -77,7 +75,7 @@ CREATE TABLE IF NOT EXISTS resultados_item (
   id BIGSERIAL PRIMARY KEY,
   item_id BIGINT NOT NULL REFERENCES itens(id),
   sequencial_resultado INT NOT NULL,
-  ni_fornecedor VARCHAR(20),
+  ni_fornecedor TEXT,
   tipo_pessoa VARCHAR(4),
   nome_razao_social TEXT,
   valor_unitario_homologado NUMERIC(18, 4),
@@ -87,7 +85,6 @@ CREATE TABLE IF NOT EXISTS resultados_item (
   situacao_resultado_id INT,
   situacao_resultado_nome TEXT,
   data_resultado DATE,
-  raw_payload JSONB,
   criado_em TIMESTAMP NOT NULL DEFAULT now(),
   UNIQUE (item_id, sequencial_resultado)
 );

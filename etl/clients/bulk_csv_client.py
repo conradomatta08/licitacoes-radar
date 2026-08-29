@@ -22,12 +22,13 @@ _TIMEOUT = httpx.Timeout(120.0, connect=15.0)
     wait=wait_exponential(multiplier=2, min=3, max=60),
     retry=retry_if_exception_type(httpx.HTTPStatusError) | retry_if_exception_type(httpx.TransportError),
 )
-def baixar_csv(url: str) -> list[dict]:
-    """Baixa o CSV inteiro e devolve a lista de linhas (dict por linha).
-    Os arquivos vao de alguns MB (diario) a algumas dezenas de MB (anual) -
-    cabe na memoria sem problema nesse volume."""
+def baixar_csv(url: str):
+    """Baixa o CSV inteiro (o texto decodificado fica em memoria - o
+    arquivo anual passa de 150MB) mas devolve um ITERATOR de linhas
+    (csv.DictReader), nao uma list: materializar todas as linhas como
+    dict de uma vez estourou a memoria do runner com o arquivo anual."""
     with httpx.Client(timeout=_TIMEOUT) as client:
         resp = client.get(url)
         resp.raise_for_status()
         texto = resp.content.decode("utf-8-sig")
-    return list(csv.DictReader(io.StringIO(texto)))
+    return csv.DictReader(io.StringIO(texto))
