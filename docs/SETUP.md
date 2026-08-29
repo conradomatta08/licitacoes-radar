@@ -30,14 +30,14 @@ e leva uns 20-30 minutos. Siga na ordem.
    - Valor: cole a connection string do Neon (passo 2.3)
 3. Salve.
 4. Vá na aba **Actions** do repositório. Você vai ver dois workflows:
-   "Ingestão incremental (PNCP)" e "Reprocessar licitações pendentes (PNCP)".
-   Eles já estão programados pra rodar sozinhos (a cada 6h e 1x por dia), mas
-   pra popular o banco pela primeira vez, clique em **"Ingestão incremental
-   (PNCP)" → "Run workflow" → "Run workflow"** (botão verde). Isso pode levar
-   várias horas na primeira vez (ele processa ~4 meses de licitações
-   nacionais) — pode fechar a aba, ele continua rodando no GitHub.
-5. Se ele parar antes de terminar (o limite é 5h por execução), é só rodar de
-   novo — ele continua de onde parou sozinho, não perde o progresso.
+   "Ingestão incremental (PNCP)" (já programado pra rodar sozinho a cada 6h)
+   e "Backfill histórico (Compras.gov.br)" (só manual).
+5. Pra popular o banco pela primeira vez com o histórico, clique em
+   **"Backfill histórico (Compras.gov.br)" → "Run workflow" → "Run
+   workflow"** (botão verde). Leva só alguns minutos — bem mais rápido que
+   uma coleta ao vivo, porque baixa um arquivo pronto em vez de consultar
+   licitação por licitação.
+6. Depois disso, a "Ingestão incremental" já mantém tudo atualizado sozinha.
 
 ## 4. Vercel (o site/dashboard)
 

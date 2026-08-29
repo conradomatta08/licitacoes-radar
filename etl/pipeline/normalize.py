@@ -40,3 +40,25 @@ def parse_decimal(value):
         return float(value)
     except (ValueError, TypeError):
         return None
+
+
+def parse_int(value):
+    """Os CSVs em lote as vezes exportam inteiros como '6.0' - passa por
+    float() primeiro pra aceitar os dois formatos."""
+    if value is None or value == "":
+        return None
+    try:
+        return int(float(value))
+    except (ValueError, TypeError):
+        return None
+
+
+def parse_bool(value):
+    if value is None or value == "":
+        return None
+    s = str(value).strip().lower()
+    if s in ("true", "1", "sim", "t"):
+        return True
+    if s in ("false", "0", "nao", "não", "f"):
+        return False
+    return None

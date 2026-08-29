@@ -1,7 +1,8 @@
 -- Radar de Licitações — schema do banco (Fase 1 / MVP)
--- Fonte de dados: PNCP (Portal Nacional de Contratações Públicas), API pública.
--- "marca" não existe em nenhum campo estruturado do PNCP (confirmado no schema
--- oficial IncluirCompraItemResultadoDTO) — por isso não há coluna para isso aqui.
+-- Fonte de dados: arquivos em lote (CSV) do Compras.gov.br/PNCP, hospedados
+-- em repositorio.dados.gov.br (mais confiavel que a API ao vivo do PNCP,
+-- ver plano). "marca" não existe em nenhum campo estruturado do PNCP
+-- (confirmado no schema oficial IncluirCompraItemResultadoDTO e nos CSVs).
 
 CREATE TABLE IF NOT EXISTS orgaos (
   id SERIAL PRIMARY KEY,
@@ -27,8 +28,8 @@ CREATE TABLE IF NOT EXISTS licitacoes (
   numero_controle_pncp VARCHAR(40) UNIQUE NOT NULL,
   orgao_id INT REFERENCES orgaos(id),
   unidade_id INT REFERENCES unidades_orgao(id),
-  ano_compra INT NOT NULL,
-  sequencial_compra INT NOT NULL,
+  ano_compra INT,
+  sequencial_compra INT,
   numero_compra VARCHAR(30),
   processo VARCHAR(50),
   modalidade_id INT,
@@ -39,14 +40,9 @@ CREATE TABLE IF NOT EXISTS licitacoes (
   situacao_compra_nome TEXT,
   uf CHAR(2),
   data_publicacao_pncp DATE,
-  data_abertura_proposta TIMESTAMP,
-  data_encerramento_proposta TIMESTAMP,
   valor_total_estimado NUMERIC(18, 2),
   valor_total_homologado NUMERIC(18, 2),
-  itens_carregados BOOLEAN NOT NULL DEFAULT FALSE,
-  existe_resultado BOOLEAN NOT NULL DEFAULT FALSE,
-  proxima_verificacao_em TIMESTAMP,
-  tentativas_verificacao INT NOT NULL DEFAULT 0,
+  existe_resultado BOOLEAN,
   link_pncp TEXT,
   link_sistema_origem TEXT,
   raw_payload JSONB,
@@ -55,9 +51,6 @@ CREATE TABLE IF NOT EXISTS licitacoes (
 );
 CREATE INDEX IF NOT EXISTS idx_licitacoes_uf ON licitacoes (uf);
 CREATE INDEX IF NOT EXISTS idx_licitacoes_data_pub ON licitacoes (data_publicacao_pncp);
-CREATE INDEX IF NOT EXISTS idx_licitacoes_sem_itens ON licitacoes (itens_carregados) WHERE itens_carregados = FALSE;
-CREATE INDEX IF NOT EXISTS idx_licitacoes_pendentes ON licitacoes (proxima_verificacao_em)
-  WHERE existe_resultado = FALSE;
 
 CREATE TABLE IF NOT EXISTS itens (
   id BIGSERIAL PRIMARY KEY,
@@ -72,13 +65,10 @@ CREATE TABLE IF NOT EXISTS itens (
   situacao_item_id INT,
   situacao_item_nome TEXT,
   tem_resultado BOOLEAN NOT NULL DEFAULT FALSE,
-  resultado_carregado BOOLEAN NOT NULL DEFAULT FALSE,
   raw_payload JSONB,
   criado_em TIMESTAMP NOT NULL DEFAULT now(),
   UNIQUE (licitacao_id, numero_item)
 );
-CREATE INDEX IF NOT EXISTS idx_itens_pendentes_resultado ON itens (tem_resultado, resultado_carregado)
-  WHERE tem_resultado = TRUE AND resultado_carregado = FALSE;
 
 -- Núcleo do produto: o(s) vencedor(es) homologado(s) de cada item.
 -- Normalmente 1 linha por item, mas em Registro de Preços pode haver mais de um
@@ -103,14 +93,3 @@ CREATE TABLE IF NOT EXISTS resultados_item (
 );
 CREATE INDEX IF NOT EXISTS idx_resultados_cnpj ON resultados_item (ni_fornecedor);
 CREATE INDEX IF NOT EXISTS idx_resultados_nome ON resultados_item USING gin (to_tsvector('simple', coalesce(nome_razao_social, '')));
-
--- Checkpoints do pipeline: permite retomar o backfill/incremental de onde parou.
-CREATE TABLE IF NOT EXISTS ingestao_checkpoints (
-  id SERIAL PRIMARY KEY,
-  tipo VARCHAR(20) NOT NULL,          -- 'discover' | 'backfill'
-  chave VARCHAR(100) NOT NULL,        -- ex: 'modalidade=6'
-  ultima_data_processada DATE,
-  status VARCHAR(20) NOT NULL DEFAULT 'em_andamento',
-  atualizado_em TIMESTAMP NOT NULL DEFAULT now(),
-  UNIQUE (tipo, chave)
-);

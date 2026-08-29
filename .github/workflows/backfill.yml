@@ -1,18 +1,12 @@
-name: Reprocessar licitações pendentes (PNCP)
+name: Backfill histórico (Compras.gov.br)
 
 on:
-  schedule:
-    - cron: "30 3 * * *"
   workflow_dispatch: {}
 
-concurrency:
-  group: reprocess-pending
-  cancel-in-progress: false
-
 jobs:
-  reprocess:
+  backfill:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: etl
@@ -26,8 +20,7 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements.txt
 
-      - name: Reprocessar licitações sem resultado
+      - name: Rodar backfill (arquivo anual, filtrado pela janela de histórico)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          MAX_RUNTIME_SECONDS: "9000"
-        run: python run_reprocess.py
+        run: python run_backfill.py

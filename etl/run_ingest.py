@@ -1,16 +1,14 @@
 """Entrypoint do workflow incremental (.github/workflows/ingest-incremental.yml).
-Roda a cada 4-6h: aplica o schema, descobre licitacoes novas, busca itens e
-busca resultados - nessa ordem, cada etapa com seu proprio orcamento de tempo."""
+Roda a cada 6h: aplica o schema e carrega o snapshot 'diario' (registros
+novos/alterados no dia) do Compras.gov.br."""
 
 import migrate
-from pipeline import discover, fetch_items, fetch_resultados
+from pipeline.load_snapshot import carregar_snapshot
 
 
 def main() -> None:
     migrate.run()
-    discover.run()
-    fetch_items.run()
-    fetch_resultados.run()
+    carregar_snapshot("diario")
 
 
 if __name__ == "__main__":
