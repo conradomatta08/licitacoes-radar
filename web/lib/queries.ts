@@ -32,12 +32,15 @@ export interface ResultadoLinha {
 }
 
 // Extrai um nome de portal a partir da URL do sistema de origem (campo
-// "Fonte" no PNCP): tira protocolo/www, pega so o dominio. "www.gov.br/compras"
-// (sem protocolo, como o Compras.gov.br as vezes exporta) vira "gov.br" pelo
-// mesmo regex, entao normalizamos esse caso pro nome oficial do portal.
+// "Fonte" no PNCP): tira protocolo/www, pega so o dominio. Quando o PNCP
+// nao tem um sistema externo vinculado (link_sistema_origem vazio), a
+// propria pagina do PNCP mostra "Fonte: Compras.gov.br" - eh o portal
+// nativo/padrao, nao "nao encontrado". "www.gov.br/compras" (sem
+// protocolo, como o Compras.gov.br as vezes exporta) tambem vira "gov.br"
+// pelo regex, entao normalizamos esse caso pro nome oficial do portal.
 const PORTAL_EXPR = `
   CASE
-    WHEN l.link_sistema_origem IS NULL OR l.link_sistema_origem = '' THEN NULL
+    WHEN l.link_sistema_origem IS NULL OR l.link_sistema_origem = '' THEN 'Compras.gov.br'
     WHEN regexp_replace(l.link_sistema_origem, '^(?:https?://)?(?:www\\.)?([^/]+).*$', '\\1') = 'gov.br'
       THEN 'Compras.gov.br'
     ELSE regexp_replace(l.link_sistema_origem, '^(?:https?://)?(?:www\\.)?([^/]+).*$', '\\1')
