@@ -48,7 +48,7 @@ export default async function Home({
     dataFinal: searchParams.dataFinal,
     valorMinimo: searchParams.valorMinimo,
     valorMaximo: searchParams.valorMaximo,
-    ordenar: (searchParams.ordenar as Ordenacao | undefined) ?? "data",
+    ordenar: (searchParams.ordenar as Ordenacao | undefined) ?? "valor_desc",
     pagina,
     porPagina: POR_PAGINA,
   };
@@ -121,8 +121,7 @@ export default async function Home({
           </div>
           <div className="campo">
             <label htmlFor="ordenar">Ordenar por</label>
-            <select id="ordenar" name="ordenar" defaultValue={searchParams.ordenar ?? "data"}>
-              <option value="data">Mais recente</option>
+            <select id="ordenar" name="ordenar" defaultValue={searchParams.ordenar ?? "valor_desc"}>
               <option value="valor_desc">Maior valor primeiro</option>
               <option value="valor_asc">Menor valor primeiro</option>
             </select>

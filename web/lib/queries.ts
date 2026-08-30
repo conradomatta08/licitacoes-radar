@@ -1,6 +1,6 @@
 import { pool } from "./db";
 
-export type Ordenacao = "data" | "valor_desc" | "valor_asc";
+export type Ordenacao = "valor_desc" | "valor_asc";
 
 export interface Filtros {
   q?: string;
@@ -48,11 +48,15 @@ export interface ResultadoLinha {
 // ComprasNet, etc). Quando vazio, nao da pra saber - fica "Nao encontrado"
 // no app. "www.gov.br/compras" (sem protocolo, como o Compras.gov.br as
 // vezes exporta) vira "gov.br" pelo regex, entao normalizamos esse caso.
+// cnetmobile.estaleiro.serpro.gov.br eh o ComprasNet (nome popular do
+// sistema do Serpro) - normaliza pro nome que as pessoas reconhecem.
 const PORTAL_EXPR = `
   CASE
     WHEN l.link_sistema_origem IS NULL OR l.link_sistema_origem = '' THEN NULL
     WHEN regexp_replace(l.link_sistema_origem, '^(?:https?://)?(?:www\\.)?([^/]+).*$', '\\1') = 'gov.br'
       THEN 'Compras.gov.br'
+    WHEN regexp_replace(l.link_sistema_origem, '^(?:https?://)?(?:www\\.)?([^/]+).*$', '\\1') = 'cnetmobile.estaleiro.serpro.gov.br'
+      THEN 'ComprasNet'
     ELSE regexp_replace(l.link_sistema_origem, '^(?:https?://)?(?:www\\.)?([^/]+).*$', '\\1')
   END
 `;
@@ -111,14 +115,9 @@ function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
 }
 
 function ordenarPor(ordenar: Ordenacao | undefined): string {
-  switch (ordenar) {
-    case "valor_desc":
-      return "ORDER BY r.valor_unitario_homologado DESC NULLS LAST, r.id DESC";
-    case "valor_asc":
-      return "ORDER BY r.valor_unitario_homologado ASC NULLS LAST, r.id DESC";
-    default:
-      return "ORDER BY l.data_publicacao_pncp DESC NULLS LAST, r.id DESC";
-  }
+  return ordenar === "valor_asc"
+    ? "ORDER BY r.valor_unitario_homologado ASC NULLS LAST, r.id DESC"
+    : "ORDER BY r.valor_unitario_homologado DESC NULLS LAST, r.id DESC";
 }
 
 const SELECT_COLUNAS = `
