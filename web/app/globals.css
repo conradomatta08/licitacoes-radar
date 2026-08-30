@@ -205,29 +205,25 @@ h1 {
 
 table {
   width: 100%;
-  min-width: 1300px;
+  min-width: 1080px;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 
 th,
 td {
   text-align: left;
-  padding: 11px 14px;
+  padding: 10px 10px;
   border-bottom: 1px solid var(--border);
-  font-size: 0.87rem;
+  font-size: 0.82rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 260px;
 }
 
 th.col-valor,
 td.col-valor {
   text-align: right;
-}
-
-td.col-descricao {
-  max-width: 340px;
 }
 
 td.col-mono {

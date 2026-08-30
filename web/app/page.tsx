@@ -177,6 +177,19 @@ export default async function Home({
 
       <div className="table-wrapper">
         <table>
+          <colgroup>
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "4%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "6%" }} />
+          </colgroup>
           <thead>
             <tr>
               <th>Empresa vencedora</th>
@@ -187,8 +200,8 @@ export default async function Home({
               <th>Produto</th>
               <th>CATMAT/CATSER</th>
               <th>Descrição</th>
-              <th className="col-valor">Valor unitário homologado</th>
-              <th>Data de divulgação no PNCP</th>
+              <th className="col-valor">Valor homologado</th>
+              <th>Divulgação PNCP</th>
               <th>Licitação</th>
             </tr>
           </thead>
