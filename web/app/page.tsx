@@ -178,17 +178,17 @@ export default async function Home({
       <div className="table-wrapper">
         <table>
           <colgroup>
+            <col style={{ width: "14%" }} />
+            <col style={{ width: "9%" }} />
             <col style={{ width: "13%" }} />
-            <col style={{ width: "8%" }} />
-            <col style={{ width: "11%" }} />
-            <col style={{ width: "4%" }} />
+            <col style={{ width: "3%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "9%" }} />
             <col style={{ width: "11%" }} />
             <col style={{ width: "13%" }} />
-            <col style={{ width: "9%" }} />
             <col style={{ width: "8%" }} />
-            <col style={{ width: "6%" }} />
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "5%" }} />
           </colgroup>
           <thead>
             <tr>
@@ -225,8 +225,8 @@ export default async function Home({
                 <td className="col-valor col-mono">{formatarMoeda(l.valor_unitario_homologado)}</td>
                 <td>{formatarData(l.data_publicacao_pncp)}</td>
                 <td>
-                  <a href={l.link_pncp} target="_blank" rel="noreferrer">
-                    Ver no PNCP
+                  <a href={l.link_pncp} target="_blank" rel="noreferrer" title="Ver no PNCP">
+                    PNCP ↗
                   </a>
                 </td>
               </tr>
