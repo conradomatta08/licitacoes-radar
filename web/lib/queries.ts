@@ -1,5 +1,7 @@
 import { pool } from "./db";
 
+export type Ordenacao = "data" | "valor_desc" | "valor_asc";
+
 export interface Filtros {
   q?: string;
   descricao?: string;
@@ -8,6 +10,9 @@ export interface Filtros {
   portal?: string;
   dataInicial?: string;
   dataFinal?: string;
+  valorMinimo?: string;
+  valorMaximo?: string;
+  ordenar?: Ordenacao;
   pagina: number;
   porPagina: number;
 }
@@ -90,9 +95,28 @@ function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
     params.push(filtros.dataFinal);
     condicoes.push(`l.data_publicacao_pncp <= $${params.length}`);
   }
+  if (filtros.valorMinimo) {
+    params.push(filtros.valorMinimo);
+    condicoes.push(`r.valor_unitario_homologado >= $${params.length}`);
+  }
+  if (filtros.valorMaximo) {
+    params.push(filtros.valorMaximo);
+    condicoes.push(`r.valor_unitario_homologado <= $${params.length}`);
+  }
 
   const where = condicoes.length ? `WHERE ${condicoes.join(" AND ")}` : "";
   return { where, params };
+}
+
+function ordenarPor(ordenar: Ordenacao | undefined): string {
+  switch (ordenar) {
+    case "valor_desc":
+      return "ORDER BY r.valor_unitario_homologado DESC NULLS LAST, r.id DESC";
+    case "valor_asc":
+      return "ORDER BY r.valor_unitario_homologado ASC NULLS LAST, r.id DESC";
+    default:
+      return "ORDER BY l.data_publicacao_pncp DESC NULLS LAST, r.id DESC";
+  }
 }
 
 const SELECT_COLUNAS = `
@@ -116,8 +140,6 @@ const SELECT_COLUNAS = `
   l.link_pncp
 `;
 
-const ORDER_BY = "ORDER BY l.data_publicacao_pncp DESC NULLS LAST, r.id DESC";
-
 export async function buscarResultados(filtros: Filtros): Promise<{ linhas: ResultadoLinha[]; total: number }> {
   const { where, params } = montarFiltros(filtros);
 
@@ -135,7 +157,7 @@ export async function buscarResultados(filtros: Filtros): Promise<{ linhas: Resu
      ${FROM_JOINS}
      LEFT JOIN unidades_orgao u ON u.id = l.unidade_id
      ${where}
-     ${ORDER_BY}
+     ${ordenarPor(filtros.ordenar)}
      LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
     dataParams
   );
@@ -158,7 +180,7 @@ export async function buscarResultadosParaExport(filtros: Omit<Filtros, "pagina"
      ${FROM_JOINS}
      LEFT JOIN unidades_orgao u ON u.id = l.unidade_id
      ${where}
-     ${ORDER_BY}
+     ${ordenarPor(filtros.ordenar)}
      LIMIT $${dataParams.length}`,
     dataParams
   );

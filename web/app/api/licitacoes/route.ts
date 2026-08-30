@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { NextRequest, NextResponse } from "next/server";
-import { buscarResultados, buscarResultadosParaExport, ResultadoLinha } from "../../../lib/queries";
+import { buscarResultados, buscarResultadosParaExport, Ordenacao, ResultadoLinha } from "../../../lib/queries";
 
 export const maxDuration = 60;
 
@@ -23,6 +23,9 @@ function lerFiltros(sp: URLSearchParams) {
     portal: sp.get("portal") ?? undefined,
     dataInicial: sp.get("dataInicial") ?? undefined,
     dataFinal: sp.get("dataFinal") ?? undefined,
+    valorMinimo: sp.get("valorMinimo") ?? undefined,
+    valorMaximo: sp.get("valorMaximo") ?? undefined,
+    ordenar: (sp.get("ordenar") as Ordenacao | null) ?? undefined,
   };
 }
 

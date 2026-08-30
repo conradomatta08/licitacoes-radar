@@ -1,4 +1,4 @@
-import { buscarResultados } from "../lib/queries";
+import { buscarResultados, Ordenacao } from "../lib/queries";
 
 const POR_PAGINA = 50;
 
@@ -46,6 +46,9 @@ export default async function Home({
     portal: searchParams.portal,
     dataInicial: searchParams.dataInicial,
     dataFinal: searchParams.dataFinal,
+    valorMinimo: searchParams.valorMinimo,
+    valorMaximo: searchParams.valorMaximo,
+    ordenar: (searchParams.ordenar as Ordenacao | undefined) ?? "data",
     pagina,
     porPagina: POR_PAGINA,
   };
@@ -61,6 +64,9 @@ export default async function Home({
   if (searchParams.portal) paramsBase.set("portal", searchParams.portal);
   if (searchParams.dataInicial) paramsBase.set("dataInicial", searchParams.dataInicial);
   if (searchParams.dataFinal) paramsBase.set("dataFinal", searchParams.dataFinal);
+  if (searchParams.valorMinimo) paramsBase.set("valorMinimo", searchParams.valorMinimo);
+  if (searchParams.valorMaximo) paramsBase.set("valorMaximo", searchParams.valorMaximo);
+  if (searchParams.ordenar) paramsBase.set("ordenar", searchParams.ordenar);
   const baseQs = paramsBase.toString();
 
   const csvHref = `/api/licitacoes?${baseQs}${baseQs ? "&" : ""}format=csv`;
@@ -91,6 +97,27 @@ export default async function Home({
         <input type="text" name="portal" placeholder="Portal" defaultValue={searchParams.portal ?? ""} />
         <input type="date" name="dataInicial" defaultValue={searchParams.dataInicial ?? ""} />
         <input type="date" name="dataFinal" defaultValue={searchParams.dataFinal ?? ""} />
+        <input
+          type="number"
+          name="valorMinimo"
+          placeholder="Valor mínimo (R$)"
+          step="0.01"
+          min={0}
+          defaultValue={searchParams.valorMinimo ?? ""}
+        />
+        <input
+          type="number"
+          name="valorMaximo"
+          placeholder="Valor máximo (R$)"
+          step="0.01"
+          min={0}
+          defaultValue={searchParams.valorMaximo ?? ""}
+        />
+        <select name="ordenar" defaultValue={searchParams.ordenar ?? "data"}>
+          <option value="data">Mais recente</option>
+          <option value="valor_desc">Maior valor primeiro</option>
+          <option value="valor_asc">Menor valor primeiro</option>
+        </select>
         <button type="submit">Buscar</button>
       </form>
 
@@ -165,6 +192,9 @@ export default async function Home({
           {searchParams.portal && <input type="hidden" name="portal" value={searchParams.portal} />}
           {searchParams.dataInicial && <input type="hidden" name="dataInicial" value={searchParams.dataInicial} />}
           {searchParams.dataFinal && <input type="hidden" name="dataFinal" value={searchParams.dataFinal} />}
+          {searchParams.valorMinimo && <input type="hidden" name="valorMinimo" value={searchParams.valorMinimo} />}
+          {searchParams.valorMaximo && <input type="hidden" name="valorMaximo" value={searchParams.valorMaximo} />}
+          {searchParams.ordenar && <input type="hidden" name="ordenar" value={searchParams.ordenar} />}
           <label>
             Ir para página
             <input type="number" name="pagina" min={1} max={totalPaginas} defaultValue={pagina} />
