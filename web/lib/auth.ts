@@ -62,4 +62,10 @@ export function verificarCredenciais(usuario: string, senha: string): boolean {
   return credenciaisCadastradas().get(usuario) === senha;
 }
 
+// Diagnostico temporario (nao expoe senha) - remover depois de confirmar
+// que AUTH_USERS esta configurada corretamente na Vercel.
+export function usuariosCadastrados(): string[] {
+  return Array.from(credenciaisCadastradas().keys());
+}
+
 export { NOME_COOKIE };

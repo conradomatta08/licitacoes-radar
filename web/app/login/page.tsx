@@ -1,4 +1,5 @@
 import { entrar } from "./actions";
+import { usuariosCadastrados } from "../../lib/auth";
 
 export default function Login({
   searchParams,
@@ -7,6 +8,7 @@ export default function Login({
 }) {
   const proximo = searchParams.next ?? "/";
   const erro = searchParams.erro === "1";
+  const diagnostico = searchParams.diag === "1";
 
   return (
     <main className="pagina-login">
@@ -29,6 +31,12 @@ export default function Login({
         {erro && <p className="erro-login">Usuário ou senha incorretos.</p>}
 
         <button type="submit">Entrar</button>
+
+        {diagnostico && (
+          <p className="erro-login">
+            Diagnóstico: usuários configurados = [{usuariosCadastrados().join(", ") || "nenhum"}]
+          </p>
+        )}
       </form>
     </main>
   );
