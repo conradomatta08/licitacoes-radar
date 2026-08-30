@@ -134,6 +134,17 @@ CREATE TABLE IF NOT EXISTS catalogo_material_pdm (
 );
 CREATE INDEX IF NOT EXISTS idx_catalogo_material_pdm_gist ON catalogo_material_pdm USING gist (nome_pdm gist_trgm_ops);
 
+-- UF de cada CNPJ vencedor, cruzado com a base de Estabelecimentos da
+-- Receita Federal (dados abertos) - usado pra avaliar vantagem logística
+-- (empresa sediada perto do órgão comprador). Só guarda UF (não endereço
+-- completo, não precisamos de mais que isso). Populada/atualizada por
+-- etl/sync_fornecedores.py - o PNCP não traz esse dado, só o CNPJ.
+CREATE TABLE IF NOT EXISTS fornecedores (
+  cnpj VARCHAR(14) PRIMARY KEY,
+  uf CHAR(2),
+  atualizado_em TIMESTAMP NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS catalogo_servico_item (
   codigo_servico INT PRIMARY KEY,
   nome_servico TEXT NOT NULL,

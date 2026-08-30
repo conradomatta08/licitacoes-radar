@@ -26,6 +26,7 @@ export interface ResultadoLinha {
   uf: string;
   municipio: string;
   modalidade_nome: string;
+  uf_fornecedor: string | null;
   portal: string | null;
   data_publicacao_pncp: string | null;
   numero_item: number;
@@ -66,6 +67,7 @@ const FROM_JOINS = `
   JOIN itens i ON i.id = r.item_id
   JOIN licitacoes l ON l.id = i.licitacao_id
   JOIN orgaos o ON o.id = l.orgao_id
+  LEFT JOIN fornecedores fo ON fo.cnpj = r.ni_fornecedor
 `;
 
 function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
@@ -129,6 +131,7 @@ const SELECT_COLUNAS = `
   l.uf,
   u.municipio,
   l.modalidade_nome,
+  fo.uf AS uf_fornecedor,
   (${PORTAL_EXPR}) AS portal,
   l.data_publicacao_pncp,
   i.numero_item,

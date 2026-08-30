@@ -32,8 +32,9 @@ function lerFiltros(sp: URLSearchParams) {
 const COLUNAS_EXPORT: { titulo: string; valor: (l: ResultadoLinha) => string | number }[] = [
   { titulo: "Empresa vencedora", valor: (l) => l.nome_razao_social ?? "" },
   { titulo: "CNPJ/CPF", valor: (l) => l.ni_fornecedor ?? "" },
+  { titulo: "UF Fornecedor", valor: (l) => l.uf_fornecedor ?? "" },
   { titulo: "Órgão", valor: (l) => l.orgao_nome ?? "" },
-  { titulo: "UF", valor: (l) => l.uf ?? "" },
+  { titulo: "UF Órgão", valor: (l) => l.uf ?? "" },
   { titulo: "Município", valor: (l) => l.municipio ?? "" },
   { titulo: "Portal", valor: (l) => l.portal ?? "Não encontrado" },
   { titulo: "Produto/Serviço", valor: (l) => l.produto ?? "" },

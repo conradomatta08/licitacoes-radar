@@ -181,15 +181,16 @@ export default async function Home({
       <div className="table-wrapper">
         <table>
           <colgroup>
-            <col style={{ width: "13%" }} />
-            <col style={{ width: "9%" }} />
             <col style={{ width: "12%" }} />
-            <col style={{ width: "4%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "5%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "5%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "9%" }} />
             <col style={{ width: "10%" }} />
             <col style={{ width: "4%" }} />
-            <col style={{ width: "9%" }} />
+            <col style={{ width: "7%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "7%" }} />
             <col style={{ width: "5%" }} />
@@ -198,8 +199,9 @@ export default async function Home({
             <tr>
               <th>Empresa vencedora</th>
               <th>CNPJ</th>
+              <th>UF Fornecedor</th>
               <th>Órgão</th>
-              <th>UF</th>
+              <th>UF Órgão</th>
               <th>Portal</th>
               <th>Produto/Serviço</th>
               <th>CATMAT/CATSER</th>
@@ -215,6 +217,9 @@ export default async function Home({
               <tr key={l.resultado_id}>
                 <td title={l.nome_razao_social}>{l.nome_razao_social}</td>
                 <td className="col-mono">{l.ni_fornecedor}</td>
+                <td>
+                  {l.uf_fornecedor ? <span className="badge">{l.uf_fornecedor}</span> : "—"}
+                </td>
                 <td title={l.orgao_nome}>{l.orgao_nome}</td>
                 <td>
                   <span className="badge">{l.uf}</span>
@@ -235,7 +240,7 @@ export default async function Home({
             ))}
             {linhas.length === 0 && (
               <tr>
-                <td colSpan={12}>Nenhum resultado encontrado para esses filtros.</td>
+                <td colSpan={13}>Nenhum resultado encontrado para esses filtros.</td>
               </tr>
             )}
           </tbody>
