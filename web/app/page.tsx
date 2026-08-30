@@ -181,14 +181,15 @@ export default async function Home({
       <div className="table-wrapper">
         <table>
           <colgroup>
-            <col style={{ width: "14%" }} />
-            <col style={{ width: "9%" }} />
             <col style={{ width: "13%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "12%" }} />
             <col style={{ width: "4%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "9%" }} />
-            <col style={{ width: "11%" }} />
-            <col style={{ width: "12%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "4%" }} />
+            <col style={{ width: "9%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "7%" }} />
             <col style={{ width: "5%" }} />
@@ -202,6 +203,7 @@ export default async function Home({
               <th>Portal</th>
               <th>Produto</th>
               <th>CATMAT/CATSER</th>
+              <th>Item</th>
               <th>Descrição</th>
               <th>Valor homologado</th>
               <th>Divulgação PNCP</th>
@@ -220,6 +222,7 @@ export default async function Home({
                 <td>{l.portal ?? "Não encontrado"}</td>
                 <td title={l.produto ?? undefined}>{l.produto ?? "—"}</td>
                 <td title={l.catalogo_nome ?? undefined}>{l.catalogo_codigo ?? "—"}</td>
+                <td className="col-mono">{l.numero_item}</td>
                 <td title={l.descricao_item}>{l.descricao_item}</td>
                 <td className="col-mono">{formatarMoeda(l.valor_unitario_homologado)}</td>
                 <td>{formatarData(l.data_publicacao_pncp)}</td>
@@ -232,7 +235,7 @@ export default async function Home({
             ))}
             {linhas.length === 0 && (
               <tr>
-                <td colSpan={11}>Nenhum resultado encontrado para esses filtros.</td>
+                <td colSpan={12}>Nenhum resultado encontrado para esses filtros.</td>
               </tr>
             )}
           </tbody>
