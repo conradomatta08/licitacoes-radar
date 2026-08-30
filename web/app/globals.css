@@ -237,6 +237,7 @@ th {
   font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  text-align: center;
   white-space: normal;
   overflow-wrap: anywhere;
   line-height: 1.3;

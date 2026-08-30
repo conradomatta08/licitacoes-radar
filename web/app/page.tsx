@@ -216,9 +216,7 @@ export default async function Home({
                 </td>
                 <td>{l.portal ?? "Não encontrado"}</td>
                 <td title={l.produto ?? undefined}>{l.produto ?? "—"}</td>
-                <td title={l.catalogo_nome ?? undefined}>
-                  {l.catalogo_codigo ? `${l.catalogo_codigo} - ${l.catalogo_nome}` : "—"}
-                </td>
+                <td title={l.catalogo_nome ?? undefined}>{l.catalogo_codigo ?? "—"}</td>
                 <td className="col-descricao" title={l.descricao_item}>
                   {l.descricao_item}
                 </td>
