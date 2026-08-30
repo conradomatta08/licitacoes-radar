@@ -212,18 +212,13 @@ table {
 
 th,
 td {
-  text-align: left;
+  text-align: center;
   padding: 10px 10px;
   border-bottom: 1px solid var(--border);
   font-size: 0.82rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-th.col-valor,
-td.col-valor {
-  text-align: right;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: top;
 }
 
 td.col-mono {
@@ -266,6 +261,11 @@ tr:last-child td {
   color: var(--accent-dark);
   font-size: 0.78rem;
   font-weight: 600;
+  white-space: nowrap;
+}
+
+td a {
+  white-space: nowrap;
 }
 
 /* Paginação */

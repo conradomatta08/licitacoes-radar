@@ -181,11 +181,11 @@ export default async function Home({
             <col style={{ width: "14%" }} />
             <col style={{ width: "9%" }} />
             <col style={{ width: "13%" }} />
-            <col style={{ width: "3%" }} />
+            <col style={{ width: "4%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "9%" }} />
             <col style={{ width: "11%" }} />
-            <col style={{ width: "13%" }} />
+            <col style={{ width: "12%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "7%" }} />
             <col style={{ width: "5%" }} />
@@ -200,9 +200,9 @@ export default async function Home({
               <th>Produto</th>
               <th>CATMAT/CATSER</th>
               <th>Descrição</th>
-              <th className="col-valor">Valor homologado</th>
+              <th>Valor homologado</th>
               <th>Divulgação PNCP</th>
-              <th>Licitação</th>
+              <th>Edital</th>
             </tr>
           </thead>
           <tbody>
@@ -217,10 +217,8 @@ export default async function Home({
                 <td>{l.portal ?? "Não encontrado"}</td>
                 <td title={l.produto ?? undefined}>{l.produto ?? "—"}</td>
                 <td title={l.catalogo_nome ?? undefined}>{l.catalogo_codigo ?? "—"}</td>
-                <td className="col-descricao" title={l.descricao_item}>
-                  {l.descricao_item}
-                </td>
-                <td className="col-valor col-mono">{formatarMoeda(l.valor_unitario_homologado)}</td>
+                <td title={l.descricao_item}>{l.descricao_item}</td>
+                <td className="col-mono">{formatarMoeda(l.valor_unitario_homologado)}</td>
                 <td>{formatarData(l.data_publicacao_pncp)}</td>
                 <td>
                   <a href={l.link_pncp} target="_blank" rel="noreferrer" title="Ver no PNCP">
