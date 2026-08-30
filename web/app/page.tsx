@@ -106,7 +106,7 @@ export default async function Home({
             />
           </div>
           <div className="campo">
-            <label htmlFor="produto">Produto</label>
+            <label htmlFor="produto">Produto/Serviço</label>
             <input
               id="produto"
               type="text"
@@ -201,7 +201,7 @@ export default async function Home({
               <th>Órgão</th>
               <th>UF</th>
               <th>Portal</th>
-              <th>Produto</th>
+              <th>Produto/Serviço</th>
               <th>CATMAT/CATSER</th>
               <th>Item</th>
               <th>Descrição</th>
