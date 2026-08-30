@@ -73,103 +73,159 @@ export default async function Home({
   const xlsxHref = `/api/licitacoes?${baseQs}${baseQs ? "&" : ""}format=xlsx`;
   const hrefPagina = (n: number) => `/?${baseQs}${baseQs ? "&" : ""}pagina=${n}`;
   const paginasVisiveis = gerarPaginas(pagina, totalPaginas);
+  const filtrosAtivos = Object.keys(searchParams).filter(
+    (k) => !["pagina"].includes(k) && searchParams[k]
+  ).length;
 
   return (
     <main>
-      <h1>Análise de Mercado - À Frente Soluções</h1>
-      <p className="subtitulo">Vencedores homologados no site PNCP.</p>
+      <header className="topo">
+        <h1>Análise de Mercado</h1>
+        <p className="marca">À Frente Soluções</p>
+        <p className="subtitulo">Vencedores homologados no site PNCP.</p>
+      </header>
 
-      <form className="filtros" method="get">
-        <input type="text" name="q" placeholder="Empresa ou CNPJ" defaultValue={searchParams.q ?? ""} />
-        <input
-          type="text"
-          name="descricao"
-          placeholder="Descrição do produto/serviço"
-          defaultValue={searchParams.descricao ?? ""}
-        />
-        <input
-          type="text"
-          name="produto"
-          placeholder="Produto (ex: notebook, nobreak)"
-          defaultValue={searchParams.produto ?? ""}
-        />
-        <input type="text" name="uf" placeholder="UF" maxLength={2} defaultValue={searchParams.uf ?? ""} />
-        <input type="text" name="portal" placeholder="Portal" defaultValue={searchParams.portal ?? ""} />
-        <input type="date" name="dataInicial" defaultValue={searchParams.dataInicial ?? ""} />
-        <input type="date" name="dataFinal" defaultValue={searchParams.dataFinal ?? ""} />
-        <input
-          type="number"
-          name="valorMinimo"
-          placeholder="Valor mínimo (R$)"
-          step="0.01"
-          min={0}
-          defaultValue={searchParams.valorMinimo ?? ""}
-        />
-        <input
-          type="number"
-          name="valorMaximo"
-          placeholder="Valor máximo (R$)"
-          step="0.01"
-          min={0}
-          defaultValue={searchParams.valorMaximo ?? ""}
-        />
-        <select name="ordenar" defaultValue={searchParams.ordenar ?? "data"}>
-          <option value="data">Mais recente</option>
-          <option value="valor_desc">Maior valor primeiro</option>
-          <option value="valor_asc">Menor valor primeiro</option>
-        </select>
-        <button type="submit">Buscar</button>
+      <form className="painel-filtros" method="get">
+        <div className="grade-filtros">
+          <div className="campo">
+            <label htmlFor="q">Empresa ou CNPJ</label>
+            <input id="q" type="text" name="q" placeholder="Nome ou CNPJ" defaultValue={searchParams.q ?? ""} />
+          </div>
+          <div className="campo">
+            <label htmlFor="descricao">Descrição</label>
+            <input
+              id="descricao"
+              type="text"
+              name="descricao"
+              placeholder="Trecho da descrição do item"
+              defaultValue={searchParams.descricao ?? ""}
+            />
+          </div>
+          <div className="campo">
+            <label htmlFor="produto">Produto</label>
+            <input
+              id="produto"
+              type="text"
+              name="produto"
+              placeholder="Ex: notebook, nobreak"
+              defaultValue={searchParams.produto ?? ""}
+            />
+          </div>
+          <div className="campo campo-uf">
+            <label htmlFor="uf">UF</label>
+            <input id="uf" type="text" name="uf" placeholder="UF" maxLength={2} defaultValue={searchParams.uf ?? ""} />
+          </div>
+          <div className="campo">
+            <label htmlFor="portal">Portal</label>
+            <input id="portal" type="text" name="portal" placeholder="Ex: gov.br" defaultValue={searchParams.portal ?? ""} />
+          </div>
+          <div className="campo">
+            <label htmlFor="ordenar">Ordenar por</label>
+            <select id="ordenar" name="ordenar" defaultValue={searchParams.ordenar ?? "data"}>
+              <option value="data">Mais recente</option>
+              <option value="valor_desc">Maior valor primeiro</option>
+              <option value="valor_asc">Menor valor primeiro</option>
+            </select>
+          </div>
+
+          <div className="campo">
+            <label htmlFor="dataInicial">Data inicial</label>
+            <input id="dataInicial" type="date" name="dataInicial" defaultValue={searchParams.dataInicial ?? ""} />
+          </div>
+          <div className="campo">
+            <label htmlFor="dataFinal">Data final</label>
+            <input id="dataFinal" type="date" name="dataFinal" defaultValue={searchParams.dataFinal ?? ""} />
+          </div>
+          <div className="campo">
+            <label htmlFor="valorMinimo">Valor mínimo (R$)</label>
+            <input
+              id="valorMinimo"
+              type="number"
+              name="valorMinimo"
+              placeholder="0,00"
+              step="0.01"
+              min={0}
+              defaultValue={searchParams.valorMinimo ?? ""}
+            />
+          </div>
+          <div className="campo">
+            <label htmlFor="valorMaximo">Valor máximo (R$)</label>
+            <input
+              id="valorMaximo"
+              type="number"
+              name="valorMaximo"
+              placeholder="0,00"
+              step="0.01"
+              min={0}
+              defaultValue={searchParams.valorMaximo ?? ""}
+            />
+          </div>
+        </div>
+        <div className="acoes-filtros">
+          {filtrosAtivos > 0 && <a href="/" className="limpar-filtros">Limpar filtros</a>}
+          <button type="submit">Buscar</button>
+        </div>
       </form>
 
       <div className="resumo">
-        <span>{total.toLocaleString("pt-BR")} resultados</span>
-        <a href={csvHref}>Exportar tudo (CSV)</a>
-        <a href={xlsxHref}>Exportar tudo (XLSX, até 50 mil linhas)</a>
+        <span className="contagem">{total.toLocaleString("pt-BR")} resultados</span>
+        <div className="exportar">
+          <a href={csvHref}>⬇ CSV</a>
+          <a href={xlsxHref}>⬇ XLSX (até 50 mil linhas)</a>
+        </div>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Empresa vencedora</th>
-            <th>CNPJ</th>
-            <th>Órgão</th>
-            <th>UF</th>
-            <th>Portal</th>
-            <th>Produto</th>
-            <th>CATMAT/CATSER</th>
-            <th>Descrição</th>
-            <th>Valor unitário homologado</th>
-            <th>Data de divulgação no PNCP</th>
-            <th>Licitação</th>
-          </tr>
-        </thead>
-        <tbody>
-          {linhas.map((l) => (
-            <tr key={l.resultado_id}>
-              <td>{l.nome_razao_social}</td>
-              <td>{l.ni_fornecedor}</td>
-              <td>{l.orgao_nome}</td>
-              <td>{l.uf}</td>
-              <td>{l.portal ?? "Não encontrado"}</td>
-              <td>{l.produto ?? "—"}</td>
-              <td>{l.catalogo_codigo ? `${l.catalogo_codigo} - ${l.catalogo_nome}` : "—"}</td>
-              <td>{l.descricao_item}</td>
-              <td>{formatarMoeda(l.valor_unitario_homologado)}</td>
-              <td>{formatarData(l.data_publicacao_pncp)}</td>
-              <td>
-                <a href={l.link_pncp} target="_blank" rel="noreferrer">
-                  Ver no PNCP
-                </a>
-              </td>
-            </tr>
-          ))}
-          {linhas.length === 0 && (
+      <div className="table-wrapper">
+        <table>
+          <thead>
             <tr>
-              <td colSpan={11}>Nenhum resultado encontrado para esses filtros.</td>
+              <th>Empresa vencedora</th>
+              <th>CNPJ</th>
+              <th>Órgão</th>
+              <th>UF</th>
+              <th>Portal</th>
+              <th>Produto</th>
+              <th>CATMAT/CATSER</th>
+              <th>Descrição</th>
+              <th className="col-valor">Valor unitário homologado</th>
+              <th>Data de divulgação no PNCP</th>
+              <th>Licitação</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {linhas.map((l) => (
+              <tr key={l.resultado_id}>
+                <td title={l.nome_razao_social}>{l.nome_razao_social}</td>
+                <td className="col-mono">{l.ni_fornecedor}</td>
+                <td title={l.orgao_nome}>{l.orgao_nome}</td>
+                <td>
+                  <span className="badge">{l.uf}</span>
+                </td>
+                <td>{l.portal ?? "Não encontrado"}</td>
+                <td title={l.produto ?? undefined}>{l.produto ?? "—"}</td>
+                <td title={l.catalogo_nome ?? undefined}>
+                  {l.catalogo_codigo ? `${l.catalogo_codigo} - ${l.catalogo_nome}` : "—"}
+                </td>
+                <td className="col-descricao" title={l.descricao_item}>
+                  {l.descricao_item}
+                </td>
+                <td className="col-valor col-mono">{formatarMoeda(l.valor_unitario_homologado)}</td>
+                <td>{formatarData(l.data_publicacao_pncp)}</td>
+                <td>
+                  <a href={l.link_pncp} target="_blank" rel="noreferrer">
+                    Ver no PNCP
+                  </a>
+                </td>
+              </tr>
+            ))}
+            {linhas.length === 0 && (
+              <tr>
+                <td colSpan={11}>Nenhum resultado encontrado para esses filtros.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <div className="paginacao">
         {pagina > 1 && <a href={hrefPagina(pagina - 1)}>&larr; Anterior</a>}
