@@ -35,6 +35,27 @@ main {
 
 .topo {
   margin-bottom: 28px;
+  position: relative;
+}
+
+.sair-form {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.link-sair {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.link-sair:hover {
+  color: var(--fg);
 }
 
 h1 {
@@ -346,4 +367,59 @@ td a {
 
 a {
   color: var(--accent);
+}
+
+/* Login */
+
+.pagina-login {
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 0 24px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cartao-login {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cartao-login h1 {
+  font-size: 1.4rem;
+}
+
+.cartao-login .subtitulo {
+  margin-bottom: 6px;
+}
+
+.cartao-login button {
+  margin-top: 6px;
+  padding: 10px 22px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+
+.cartao-login button:hover {
+  background: var(--accent-dark);
+}
+
+.erro-login {
+  margin: 0;
+  color: #b3261e;
+  font-size: 0.85rem;
 }

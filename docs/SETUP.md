@@ -49,9 +49,25 @@ e leva uns 20-30 minutos. Siga na ordem.
 4. Em **"Environment Variables"**, adicione:
    - Nome: `DATABASE_URL`
    - Valor: a mesma connection string do Neon (passo 2.3)
+   - Nome: `AUTH_SECRET`
+   - Valor: uma string aleatória longa, só pra essa variável (gere uma em
+     [passwordsgenerator.net](https://passwordsgenerator.net) ou rode
+     `openssl rand -hex 32` no terminal) — nunca reaproveite em outro lugar.
+   - Nome: `AUTH_USERS`
+   - Valor: uma pessoa por par `usuario:senha`, separados por vírgula, ex:
+     `maria:S3nh4Forte!,joao:Outr4Senha#`. Só quem estiver aqui consegue
+     entrar no dashboard.
 5. Clique em **"Deploy"**. Em 1-2 minutos a Vercel te dá um link
    (algo como `licitacoes-radar.vercel.app`) — esse é o endereço do seu
-   dashboard.
+   dashboard. Ele vai pedir usuário e senha (uma das combinações que você
+   colocou em `AUTH_USERS`) antes de mostrar qualquer dado.
+
+### Adicionando/removendo uma pessoa depois
+
+Vá em **Settings → Environment Variables** no projeto da Vercel, edite o
+valor de `AUTH_USERS` (adicione ou remova o par `usuario:senha` da pessoa) e
+clique em **"Redeploy"** no último deployment — sem isso a mudança não
+entra em vigor. Trocar a senha de alguém funciona do mesmo jeito.
 
 ## Pronto
 
@@ -81,6 +97,8 @@ python run_ingest.py
 cd web
 npm install
 echo DATABASE_URL=postgresql://... > .env.local
+echo AUTH_SECRET=qualquer-string-aleatoria-para-teste-local >> .env.local
+echo AUTH_USERS=teste:teste123 >> .env.local
 npm run dev
-# abra http://localhost:3000
+# abra http://localhost:3000 e entre com usuario "teste" / senha "teste123"
 ```

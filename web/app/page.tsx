@@ -1,4 +1,5 @@
 import { buscarResultados, Ordenacao } from "../lib/queries";
+import { sair } from "./login/actions";
 
 const POR_PAGINA = 50;
 
@@ -80,6 +81,9 @@ export default async function Home({
   return (
     <main>
       <header className="topo">
+        <form action={sair} className="sair-form">
+          <button type="submit" className="link-sair">Sair</button>
+        </form>
         <h1>Análise de Mercado</h1>
         <p className="marca">À Frente Soluções</p>
         <p className="subtitulo">Vencedores homologados no site PNCP.</p>
