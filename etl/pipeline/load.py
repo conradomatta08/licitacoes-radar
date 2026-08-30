@@ -188,12 +188,17 @@ _ITEM_CONFLITO = """
 """
 
 
-def upsert_itens_lote(conn: psycopg.Connection, linhas, cache_licitacao: dict) -> dict:
-    """Devolve {(numero_controle_pncp, numero_item): item_id}. Linhas cuja
-    licitacao nao esta no cache (fora do escopo carregado) sao ignoradas."""
-    resultado: dict = {}
+def upsert_itens_lote(conn: psycopg.Connection, linhas, cache_licitacao: dict) -> None:
+    """Nao devolve um cache dos itens gravados (ao contrario de
+    upsert_licitacoes_lote) de proposito: os arquivos anuais tem milhoes de
+    itens, e um dict {chave: item_id} nessa escala (testado: 2.9M entradas
+    em 2025) e o suficiente pra derrubar o processo por falta de memoria
+    (confirmado em 2026-08-30 - backfill morreu sem traceback no meio do
+    arquivo de itens de 2026). upsert_resultados_lote resolve o item_id
+    direto no banco, em lote, quando precisar."""
     lote: dict = {}
     total = 0
+    carregados = 0
     for row in linhas:
         total += 1
         numero_controle = row.get("numero_controle_PNCP_compra")
@@ -220,14 +225,13 @@ def upsert_itens_lote(conn: psycopg.Connection, linhas, cache_licitacao: dict) -
             parse_bool(row.get("tem_resultado")) or False,
         )
         if len(lote) >= _TAMANHO_LOTE:
-            resultado.update(_inserir_lote(conn, _ITEM_INSERT, _ITEM_CONFLITO, 12, lote))
+            carregados += len(_inserir_lote(conn, _ITEM_INSERT, _ITEM_CONFLITO, 12, lote))
             conn.commit()
             lote = {}
     if lote:
-        resultado.update(_inserir_lote(conn, _ITEM_INSERT, _ITEM_CONFLITO, 12, lote))
+        carregados += len(_inserir_lote(conn, _ITEM_INSERT, _ITEM_CONFLITO, 12, lote))
         conn.commit()
-    print(f"itens: {len(resultado)}/{total} linhas carregadas")
-    return resultado
+    print(f"itens: {carregados}/{total} linhas carregadas")
 
 
 _RESULTADO_INSERT = """
@@ -248,7 +252,24 @@ _RESULTADO_CONFLITO = """
 """
 
 
-def upsert_resultados_lote(conn: psycopg.Connection, linhas, cache_licitacao: dict, cache_item: dict) -> None:
+def _resolver_item_ids(conn: psycopg.Connection, pares: list) -> dict:
+    """pares: lista de (licitacao_id, numero_item). Resolve item_id em lote
+    via consulta no indice UNIQUE(licitacao_id, numero_item) de itens, em
+    vez de depender de um cache em memoria com todo o arquivo de itens
+    (essa era a causa da falta de memoria - ver upsert_itens_lote)."""
+    if not pares:
+        return {}
+    unicos = list(set(pares))
+    placeholder = ",".join(["(%s,%s)"] * len(unicos))
+    params = [v for par in unicos for v in par]
+    linhas = conn.execute(
+        f"SELECT licitacao_id, numero_item, id FROM itens WHERE (licitacao_id, numero_item) IN ({placeholder})",
+        params,
+    ).fetchall()
+    return {(lic_id, num_item): item_id for lic_id, num_item, item_id in linhas}
+
+
+def upsert_resultados_lote(conn: psycopg.Connection, linhas, cache_licitacao: dict) -> None:
     lote: dict = {}
     total = 0
     processados = 0
@@ -261,16 +282,9 @@ def upsert_resultados_lote(conn: psycopg.Connection, linhas, cache_licitacao: di
         licitacao_id = cache_licitacao.get(numero_controle)
         if licitacao_id is None:
             continue
-        item_id = cache_item.get((numero_controle, numero_item))
-        if item_id is None:
-            # O item pode nao ter vindo no arquivo de itens do mesmo periodo
-            # (ex: resultado alterado sem o item ter sido re-exportado).
-            continue
 
         sequencial_resultado = parse_int(row.get("sequencial_resultado")) or 1
-        lote[(item_id, sequencial_resultado)] = (
-            item_id,
-            sequencial_resultado,
+        lote[(licitacao_id, numero_item, sequencial_resultado)] = (
             clean_cnpj(row.get("ni_fornecedor")) or row.get("ni_fornecedor"),
             row.get("tipo_pessoa"),
             row.get("nome_razao_social_fornecedor"),
@@ -283,12 +297,27 @@ def upsert_resultados_lote(conn: psycopg.Connection, linhas, cache_licitacao: di
             parse_date(row.get("data_resultado_pncp")),
         )
         if len(lote) >= _TAMANHO_LOTE:
-            _inserir_lote(conn, _RESULTADO_INSERT, _RESULTADO_CONFLITO, 12, lote)
-            processados += len(lote)
+            processados += _gravar_lote_resultados(conn, lote)
             conn.commit()
             lote = {}
     if lote:
-        _inserir_lote(conn, _RESULTADO_INSERT, _RESULTADO_CONFLITO, 12, lote)
-        processados += len(lote)
+        processados += _gravar_lote_resultados(conn, lote)
         conn.commit()
     print(f"resultados: {processados}/{total} linhas processadas")
+
+
+def _gravar_lote_resultados(conn: psycopg.Connection, lote: dict) -> int:
+    pares = [(lic_id, num_item) for (lic_id, num_item, _seq) in lote.keys()]
+    item_ids = _resolver_item_ids(conn, pares)
+    linhas_finais = {}
+    for (lic_id, num_item, seq), valores in lote.items():
+        item_id = item_ids.get((lic_id, num_item))
+        if item_id is None:
+            # O item pode nao ter vindo no arquivo de itens do mesmo periodo
+            # (ex: resultado alterado sem o item ter sido re-exportado).
+            continue
+        linhas_finais[(item_id, seq)] = (item_id, seq) + valores
+    if not linhas_finais:
+        return 0
+    _inserir_lote(conn, _RESULTADO_INSERT, _RESULTADO_CONFLITO, 12, linhas_finais)
+    return len(linhas_finais)
