@@ -117,6 +117,14 @@ CREATE TABLE IF NOT EXISTS resultados_item (
 CREATE INDEX IF NOT EXISTS idx_resultados_cnpj ON resultados_item (ni_fornecedor);
 CREATE INDEX IF NOT EXISTS idx_resultados_nome_trgm ON resultados_item USING gin (nome_razao_social gin_trgm_ops);
 DROP INDEX IF EXISTS idx_resultados_nome;
+-- Sem isso, ordenar por valor (a ordenacao padrao do dashboard) obrigava a
+-- ordenar as ~2.8 milhoes de linhas inteiras do zero a cada busca sem
+-- filtro (~3s so nisso, com spill pra disco) - confirmado via EXPLAIN
+-- ANALYZE em 2026-08-30. Um indice por direcao porque a ordenacao usa
+-- NULLS LAST nos dois sentidos (ASC e DESC nao sao o mesmo indice
+-- percorrido ao contrario nesse caso).
+CREATE INDEX IF NOT EXISTS idx_resultados_valor_desc ON resultados_item (valor_unitario_homologado DESC NULLS LAST, id DESC);
+CREATE INDEX IF NOT EXISTS idx_resultados_valor_asc ON resultados_item (valor_unitario_homologado ASC NULLS LAST, id DESC);
 
 -- Catálogo oficial (CATMAT/CATSER), espelhado de dadosabertos.compras.gov.br
 -- (modulo-material/modulo-servico) - tabelas de referência pequenas

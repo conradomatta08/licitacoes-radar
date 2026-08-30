@@ -146,11 +146,21 @@ const SELECT_COLUNAS = `
   l.link_pncp
 `;
 
+// Sem filtro, o total e simplesmente todas as linhas de resultados_item -
+// os JOINs (inner, por chave estrangeira) nao eliminam nenhuma linha nesse
+// caso, entao contar direto na tabela evita escanear licitacoes/itens/
+// orgaos inteiras a toa (a diferenca e enorme: ~0.2s contra 5-17s medido
+// em 2026-08-30, a maior causa de lentidao reportada no dashboard).
+async function contarResultados(where: string, params: unknown[]): Promise<number> {
+  const sql = where ? `SELECT count(*) ${FROM_JOINS} ${where}` : "SELECT count(*) FROM resultados_item";
+  const res = await pool.query(sql, params);
+  return parseInt(res.rows[0].count, 10);
+}
+
 export async function buscarResultados(filtros: Filtros): Promise<{ linhas: ResultadoLinha[]; total: number }> {
   const { where, params } = montarFiltros(filtros);
 
-  const totalRes = await pool.query(`SELECT count(*) ${FROM_JOINS} ${where}`, params);
-  const total = parseInt(totalRes.rows[0].count, 10);
+  const total = await contarResultados(where, params);
 
   const dataParams = [...params];
   dataParams.push(filtros.porPagina);
