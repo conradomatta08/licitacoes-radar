@@ -31,6 +31,8 @@ export interface ResultadoLinha {
   numero_item: number;
   descricao_item: string;
   produto: string | null;
+  catalogo_codigo: number | null;
+  catalogo_nome: string | null;
   ni_fornecedor: string;
   nome_razao_social: string;
   valor_unitario_homologado: number | null;
@@ -133,6 +135,8 @@ const SELECT_COLUNAS = `
   i.numero_item,
   i.descricao_item,
   i.produto,
+  i.catalogo_codigo,
+  i.catalogo_nome,
   r.ni_fornecedor,
   r.nome_razao_social,
   r.valor_unitario_homologado,

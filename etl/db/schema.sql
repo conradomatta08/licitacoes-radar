@@ -85,6 +85,15 @@ CREATE INDEX IF NOT EXISTS idx_itens_produto_trgm ON itens USING gin (produto gi
 -- scan, mais lenta, mas aceitável pro volume atual).
 DROP INDEX IF EXISTS idx_itens_descricao_trgm;
 
+-- Classificação por correspondência aproximada (pg_trgm) contra o catálogo
+-- oficial (ver tabelas catalogo_* abaixo) - não é o código usado de fato na
+-- compra (o PNCP não registra isso), é o item do catálogo mais parecido com
+-- o texto de 'produto'. catalogo_similaridade guarda o grau de semelhança
+-- (0 a 1) usado no casamento, pra transparência/depuração.
+ALTER TABLE itens ADD COLUMN IF NOT EXISTS catalogo_codigo INT;
+ALTER TABLE itens ADD COLUMN IF NOT EXISTS catalogo_nome TEXT;
+ALTER TABLE itens ADD COLUMN IF NOT EXISTS catalogo_similaridade REAL;
+
 -- Núcleo do produto: o(s) vencedor(es) homologado(s) de cada item.
 -- Normalmente 1 linha por item, mas em Registro de Preços pode haver mais de um
 -- fornecedor homologado (ordem_classificacao_srp indica a posição).
@@ -108,3 +117,33 @@ CREATE TABLE IF NOT EXISTS resultados_item (
 CREATE INDEX IF NOT EXISTS idx_resultados_cnpj ON resultados_item (ni_fornecedor);
 CREATE INDEX IF NOT EXISTS idx_resultados_nome_trgm ON resultados_item USING gin (nome_razao_social gin_trgm_ops);
 DROP INDEX IF EXISTS idx_resultados_nome;
+
+-- Catálogo oficial (CATMAT/CATSER), espelhado de dadosabertos.compras.gov.br
+-- (modulo-material/modulo-servico) - tabelas de referência pequenas
+-- (~20 mil e ~3 mil linhas), sincronizadas raramente por
+-- etl/sync_catalogo_oficial.py (o catálogo quase não muda). Usadas só pra
+-- casar com 'produto' via similaridade de texto (etl/match_catalogo.py) -
+-- ver comentário em itens.catalogo_codigo.
+CREATE TABLE IF NOT EXISTS catalogo_material_pdm (
+  codigo_pdm INT PRIMARY KEY,
+  nome_pdm TEXT NOT NULL,
+  codigo_classe INT,
+  nome_classe TEXT,
+  codigo_grupo INT,
+  nome_grupo TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_catalogo_material_pdm_gist ON catalogo_material_pdm USING gist (nome_pdm gist_trgm_ops);
+
+CREATE TABLE IF NOT EXISTS catalogo_servico_item (
+  codigo_servico INT PRIMARY KEY,
+  nome_servico TEXT NOT NULL,
+  codigo_classe INT,
+  nome_classe TEXT,
+  codigo_grupo INT,
+  nome_grupo TEXT,
+  codigo_divisao INT,
+  nome_divisao TEXT,
+  codigo_secao INT,
+  nome_secao TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_catalogo_servico_item_gist ON catalogo_servico_item USING gist (nome_servico gist_trgm_ops);

@@ -136,6 +136,7 @@ export default async function Home({
             <th>UF</th>
             <th>Portal</th>
             <th>Produto</th>
+            <th>CATMAT/CATSER</th>
             <th>Descrição</th>
             <th>Valor unitário homologado</th>
             <th>Data de divulgação no PNCP</th>
@@ -151,6 +152,7 @@ export default async function Home({
               <td>{l.uf}</td>
               <td>{l.portal ?? "Não encontrado"}</td>
               <td>{l.produto ?? "—"}</td>
+              <td>{l.catalogo_codigo ? `${l.catalogo_codigo} - ${l.catalogo_nome}` : "—"}</td>
               <td>{l.descricao_item}</td>
               <td>{formatarMoeda(l.valor_unitario_homologado)}</td>
               <td>{formatarData(l.data_publicacao_pncp)}</td>
@@ -163,7 +165,7 @@ export default async function Home({
           ))}
           {linhas.length === 0 && (
             <tr>
-              <td colSpan={10}>Nenhum resultado encontrado para esses filtros.</td>
+              <td colSpan={11}>Nenhum resultado encontrado para esses filtros.</td>
             </tr>
           )}
         </tbody>

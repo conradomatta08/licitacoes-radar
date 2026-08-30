@@ -37,6 +37,7 @@ const COLUNAS_EXPORT: { titulo: string; valor: (l: ResultadoLinha) => string | n
   { titulo: "Município", valor: (l) => l.municipio ?? "" },
   { titulo: "Portal", valor: (l) => l.portal ?? "Não encontrado" },
   { titulo: "Produto", valor: (l) => l.produto ?? "" },
+  { titulo: "CATMAT/CATSER", valor: (l) => (l.catalogo_codigo ? `${l.catalogo_codigo} - ${l.catalogo_nome}` : "") },
   { titulo: "Descrição do item", valor: (l) => l.descricao_item ?? "" },
   { titulo: "Valor unitário homologado", valor: (l) => (l.valor_unitario_homologado ?? "") as number },
   { titulo: "Data de divulgação no PNCP", valor: (l) => formatarDataIso(l.data_publicacao_pncp) },
