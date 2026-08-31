@@ -89,7 +89,9 @@ function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
   }
   if (filtros.uf) {
     params.push(filtros.uf.toUpperCase());
-    condicoes.push(`l.uf = $${params.length}`);
+    // r.uf (nao l.uf): duplicado direto em resultados_item pra filtrar sem
+    // precisar juntar itens/licitacoes (ver contarResultados/schema.sql).
+    condicoes.push(`r.uf = $${params.length}`);
   }
   if (filtros.portal) {
     params.push(`%${filtros.portal}%`);
@@ -97,11 +99,11 @@ function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
   }
   if (filtros.dataInicial) {
     params.push(filtros.dataInicial);
-    condicoes.push(`l.data_publicacao_pncp >= $${params.length}`);
+    condicoes.push(`r.data_publicacao_pncp >= $${params.length}`);
   }
   if (filtros.dataFinal) {
     params.push(filtros.dataFinal);
-    condicoes.push(`l.data_publicacao_pncp <= $${params.length}`);
+    condicoes.push(`r.data_publicacao_pncp <= $${params.length}`);
   }
   if (filtros.valorMinimo) {
     params.push(filtros.valorMinimo);
@@ -146,13 +148,28 @@ const SELECT_COLUNAS = `
   l.link_pncp
 `;
 
-// Sem filtro, o total e simplesmente todas as linhas de resultados_item -
-// os JOINs (inner, por chave estrangeira) nao eliminam nenhuma linha nesse
-// caso, entao contar direto na tabela evita escanear licitacoes/itens/
-// orgaos inteiras a toa (a diferenca e enorme: ~0.2s contra 5-17s medido
-// em 2026-08-30, a maior causa de lentidao reportada no dashboard).
-async function contarResultados(where: string, params: unknown[]): Promise<number> {
-  const sql = where ? `SELECT count(*) ${FROM_JOINS} ${where}` : "SELECT count(*) FROM resultados_item";
+// A contagem so precisa dos JOINs que os filtros ativos realmente usam -
+// uf/data/valor agora estao direto em resultados_item (ver schema.sql),
+// entao a maioria das buscas nem chega a tocar itens/licitacoes/orgaos.
+// Sem isso (JOIN fixo com as 4 tabelas sempre) filtrar so por UF chegou a
+// levar 2-13s pra contar ~580 mil linhas batendo em 3 tabelas de milhoes
+// de linhas a toa - medido em 2026-08-30. Only itens/licitacoes/orgaos
+// entram quando descricao/produto (itens), portal (licitacoes) ou q
+// (orgaos.razao_social) estao no filtro.
+function construirFromContagem(filtros: Omit<Filtros, "pagina" | "porPagina">): string {
+  const precisaOrgao = !!filtros.q;
+  const precisaLicitacao = precisaOrgao || !!filtros.portal;
+  const precisaItem = precisaLicitacao || !!filtros.descricao || !!filtros.produto;
+
+  let from = "FROM resultados_item r";
+  if (precisaItem) from += " JOIN itens i ON i.id = r.item_id";
+  if (precisaLicitacao) from += " JOIN licitacoes l ON l.id = i.licitacao_id";
+  if (precisaOrgao) from += " JOIN orgaos o ON o.id = l.orgao_id";
+  return from;
+}
+
+async function contarResultados(filtros: Omit<Filtros, "pagina" | "porPagina">, where: string, params: unknown[]): Promise<number> {
+  const sql = `SELECT count(*) ${construirFromContagem(filtros)} ${where}`;
   const res = await pool.query(sql, params);
   return parseInt(res.rows[0].count, 10);
 }
@@ -160,7 +177,7 @@ async function contarResultados(where: string, params: unknown[]): Promise<numbe
 export async function buscarResultados(filtros: Filtros): Promise<{ linhas: ResultadoLinha[]; total: number }> {
   const { where, params } = montarFiltros(filtros);
 
-  const total = await contarResultados(where, params);
+  const total = await contarResultados(filtros, where, params);
 
   const dataParams = [...params];
   dataParams.push(filtros.porPagina);

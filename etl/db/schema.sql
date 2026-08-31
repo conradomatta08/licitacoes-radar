@@ -125,6 +125,18 @@ DROP INDEX IF EXISTS idx_resultados_nome;
 -- percorrido ao contrario nesse caso).
 CREATE INDEX IF NOT EXISTS idx_resultados_valor_desc ON resultados_item (valor_unitario_homologado DESC NULLS LAST, id DESC);
 CREATE INDEX IF NOT EXISTS idx_resultados_valor_asc ON resultados_item (valor_unitario_homologado ASC NULLS LAST, id DESC);
+-- uf/data_publicacao_pncp duplicados de licitacoes (via itens) direto aqui:
+-- filtrar por UF ou por periodo (os filtros mais comuns depois de nenhum
+-- filtro) exigia juntar resultados_item + itens + licitacoes so pra isso -
+-- medido em 2-13s pra UF=SP sozinho em 2026-08-30. Com a coluna aqui e
+-- indexada, esses filtros nao precisam mais desse JOIN. Populado em
+-- pipeline/load.py no momento da carga; itens.produto/descricao e busca
+-- por nome do orgao continuam precisando do JOIN (nao da pra evitar sem
+-- duplicar tudo).
+ALTER TABLE resultados_item ADD COLUMN IF NOT EXISTS uf CHAR(2);
+ALTER TABLE resultados_item ADD COLUMN IF NOT EXISTS data_publicacao_pncp DATE;
+CREATE INDEX IF NOT EXISTS idx_resultados_uf ON resultados_item (uf);
+CREATE INDEX IF NOT EXISTS idx_resultados_data_pub ON resultados_item (data_publicacao_pncp);
 
 -- Catálogo oficial (CATMAT/CATSER), espelhado de dadosabertos.compras.gov.br
 -- (modulo-material/modulo-servico) - tabelas de referência pequenas
