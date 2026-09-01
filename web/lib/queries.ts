@@ -111,12 +111,18 @@ function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
     // precisar juntar itens/licitacoes (ver contarResultados/schema.sql).
     condicoes.push(`r.uf = $${params.length}`);
   }
+  // "sim" = qualquer um dos dois sinais; "fabricante"/"importador" isolam
+  // um sinal especifico (independente do outro estar presente ou nao);
+  // "nao" = nenhum dos dois. Nao existe CNAE de "importadora" (importacao
+  // e fluxo comercial, nao setor de atividade - confirmado em pesquisa em
+  // 2026-08-31), entao o nome do vencedor e o unico sinal viavel pra esse
+  // segundo caso.
   if (filtros.fabricante === "sim") {
-    // "Sim" = fabricante (CNAE) OU indicio de importadora pelo nome - nao
-    // existe CNAE de "importadora" (importacao e fluxo comercial, nao
-    // setor de atividade - confirmado em pesquisa em 2026-08-31), entao o
-    // nome e o unico sinal viavel pra esse segundo caso.
     condicoes.push(`(fo.eh_fabricante = true OR ${IMPORTADOR_EXPR})`);
+  } else if (filtros.fabricante === "fabricante") {
+    condicoes.push(`fo.eh_fabricante = true`);
+  } else if (filtros.fabricante === "importador") {
+    condicoes.push(`${IMPORTADOR_EXPR}`);
   } else if (filtros.fabricante === "nao") {
     condicoes.push(`(fo.eh_fabricante = false AND NOT (${IMPORTADOR_EXPR}))`);
   }
@@ -194,7 +200,12 @@ function construirFromContagem(filtros: Omit<Filtros, "pagina" | "porPagina">): 
   const precisaOrgao = !!filtros.q;
   const precisaLicitacao = precisaOrgao || !!filtros.portal;
   const precisaItem = precisaLicitacao || !!filtros.descricao || !!filtros.produto;
-  const precisaFornecedor = filtros.fabricante === "sim" || filtros.fabricante === "nao" || !!filtros.ufFornecedor;
+  // "importador" sozinho nao precisa de fo (so olha r.nome_razao_social).
+  const precisaFornecedor =
+    filtros.fabricante === "sim" ||
+    filtros.fabricante === "fabricante" ||
+    filtros.fabricante === "nao" ||
+    !!filtros.ufFornecedor;
 
   let from = "FROM resultados_item r";
   if (precisaItem) from += " JOIN itens i ON i.id = r.item_id";

@@ -133,8 +133,10 @@ export default async function Home({
             <label htmlFor="fabricante">Fabricante/Importador</label>
             <select id="fabricante" name="fabricante" defaultValue={searchParams.fabricante ?? ""}>
               <option value="">Todos</option>
-              <option value="sim">Só fabricante ou importador</option>
-              <option value="nao">Só sem indício (revenda)</option>
+              <option value="sim">Fabricante ou importador (qualquer um)</option>
+              <option value="fabricante">Só fabricante/indústria (CNAE)</option>
+              <option value="importador">Só importador (indício no nome)</option>
+              <option value="nao">Sem indício (revenda)</option>
             </select>
           </div>
           <div className="campo campo-uf">

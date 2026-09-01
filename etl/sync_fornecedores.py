@@ -67,17 +67,23 @@ def _baixar_zip(pasta: str, indice: int) -> bytes:
 
 _DIVISAO_MIN_FABRICACAO = 10
 _DIVISAO_MAX_FABRICACAO = 33
+_DIVISAO_EDICAO = 58  # Edicao (editoras de livro/jornal/revista) - secao J,
+# fora da secao C mas e producao propria, nao revenda (caso real: Editora
+# Moderna, CNAE 5811-5/00, ficava classificada como "revenda" sem isso -
+# confirmado/pedido pelo usuario em 2026-08-31).
 
 
 def _eh_cnae_fabricacao(cnae: str) -> bool:
     """Secao C (Industrias de Transformacao) do CNAE 2.0 = divisoes 10 a 33
-    (confirmado no IBGE/CONCLA) - divisao e os 2 primeiros digitos do
-    codigo (ex: '1113502' -> divisao 11 -> fabricacao de bebidas)."""
+    (confirmado no IBGE/CONCLA), mais a divisao 58 (Edicao) tratada como
+    producao propria mesmo estando fora da secao C - divisao e os 2
+    primeiros digitos do codigo (ex: '1113502' -> divisao 11 -> fabricacao
+    de bebidas; '5811500' -> divisao 58 -> edicao de livros)."""
     cnae = cnae.strip()
     if len(cnae) < 2 or not cnae[:2].isdigit():
         return False
     divisao = int(cnae[:2])
-    return _DIVISAO_MIN_FABRICACAO <= divisao <= _DIVISAO_MAX_FABRICACAO
+    return _DIVISAO_MIN_FABRICACAO <= divisao <= _DIVISAO_MAX_FABRICACAO or divisao == _DIVISAO_EDICAO
 
 
 def _extrair_dados(conteudo_zip: bytes, cnpjs_procurados: set) -> dict:
