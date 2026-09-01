@@ -130,11 +130,11 @@ export default async function Home({
             </select>
           </div>
           <div className="campo">
-            <label htmlFor="fabricante">Fabricante</label>
+            <label htmlFor="fabricante">Fabricante/Importador</label>
             <select id="fabricante" name="fabricante" defaultValue={searchParams.fabricante ?? ""}>
               <option value="">Todos</option>
-              <option value="sim">Só fabricantes</option>
-              <option value="nao">Só não fabricantes</option>
+              <option value="sim">Só fabricante ou importador</option>
+              <option value="nao">Só sem indício (revenda)</option>
             </select>
           </div>
           <div className="campo campo-uf">
@@ -221,12 +221,13 @@ export default async function Home({
       <div className="table-wrapper">
         <table>
           <colgroup>
-            <col style={{ width: "11%" }} />
-            <col style={{ width: "8%" }} />
-            <col style={{ width: "5%" }} />
-            <col style={{ width: "5%" }} />
-            <col style={{ width: "8%" }} />
-            <col style={{ width: "5%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "4%" }} />
+            <col style={{ width: "4%" }} />
+            <col style={{ width: "4%" }} />
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "4%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "4%" }} />
@@ -243,6 +244,7 @@ export default async function Home({
               <th>CNPJ</th>
               <th>UF Fornecedor</th>
               <th>Fabricante</th>
+              <th>Importador</th>
               <th>Órgão</th>
               <th>UF Órgão</th>
               <th>Portal</th>
@@ -265,6 +267,7 @@ export default async function Home({
                   {l.uf_fornecedor ? <span className="badge">{l.uf_fornecedor}</span> : "—"}
                 </td>
                 <td>{l.eh_fabricante === true ? "Sim" : l.eh_fabricante === false ? "Não" : "—"}</td>
+                <td>{l.provavel_importador ? "Sim" : "Não"}</td>
                 <td title={l.orgao_nome}>{l.orgao_nome}</td>
                 <td>
                   <span className="badge">{l.uf}</span>
@@ -286,7 +289,7 @@ export default async function Home({
             ))}
             {linhas.length === 0 && (
               <tr>
-                <td colSpan={15}>Nenhum resultado encontrado para esses filtros.</td>
+                <td colSpan={16}>Nenhum resultado encontrado para esses filtros.</td>
               </tr>
             )}
           </tbody>

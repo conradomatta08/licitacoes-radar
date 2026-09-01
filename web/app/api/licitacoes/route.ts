@@ -37,6 +37,7 @@ const COLUNAS_EXPORT: { titulo: string; valor: (l: ResultadoLinha) => string | n
   { titulo: "CNPJ/CPF", valor: (l) => l.ni_fornecedor ?? "" },
   { titulo: "UF Fornecedor", valor: (l) => l.uf_fornecedor ?? "" },
   { titulo: "Fabricante", valor: (l) => (l.eh_fabricante === true ? "Sim" : l.eh_fabricante === false ? "Não" : "") },
+  { titulo: "Importador (indício)", valor: (l) => (l.provavel_importador ? "Sim" : "Não") },
   { titulo: "Órgão", valor: (l) => l.orgao_nome ?? "" },
   { titulo: "UF Órgão", valor: (l) => l.uf ?? "" },
   { titulo: "Município", valor: (l) => l.municipio ?? "" },

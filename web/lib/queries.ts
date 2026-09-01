@@ -31,6 +31,7 @@ export interface ResultadoLinha {
   modalidade_nome: string;
   uf_fornecedor: string | null;
   eh_fabricante: boolean | null;
+  provavel_importador: boolean;
   portal: string | null;
   data_publicacao_pncp: string | null;
   numero_item: number;
@@ -66,6 +67,12 @@ const PORTAL_EXPR = `
     ELSE regexp_replace(l.link_sistema_origem, '^(?:https?://)?(?:www\\.)?([^/]+).*$', '\\1')
   END
 `;
+
+// Nao existe CNAE de "importadora" (confirmado - importacao e fluxo
+// comercial, nao setor de atividade). O nome do vencedor (ja temos, vem
+// direto do PNCP) e o unico indicio viavel - so um heuristico por texto,
+// nao um dado oficial cadastral como eh_fabricante.
+const IMPORTADOR_EXPR = `r.nome_razao_social ILIKE '%import%'`;
 
 const FROM_JOINS = `
   FROM resultados_item r
@@ -104,8 +111,14 @@ function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
     // precisar juntar itens/licitacoes (ver contarResultados/schema.sql).
     condicoes.push(`r.uf = $${params.length}`);
   }
-  if (filtros.fabricante === "sim" || filtros.fabricante === "nao") {
-    condicoes.push(`fo.eh_fabricante = ${filtros.fabricante === "sim" ? "true" : "false"}`);
+  if (filtros.fabricante === "sim") {
+    // "Sim" = fabricante (CNAE) OU indicio de importadora pelo nome - nao
+    // existe CNAE de "importadora" (importacao e fluxo comercial, nao
+    // setor de atividade - confirmado em pesquisa em 2026-08-31), entao o
+    // nome e o unico sinal viavel pra esse segundo caso.
+    condicoes.push(`(fo.eh_fabricante = true OR ${IMPORTADOR_EXPR})`);
+  } else if (filtros.fabricante === "nao") {
+    condicoes.push(`(fo.eh_fabricante = false AND NOT (${IMPORTADOR_EXPR}))`);
   }
   if (filtros.ufFornecedor) {
     params.push(filtros.ufFornecedor.toUpperCase());
@@ -153,6 +166,7 @@ const SELECT_COLUNAS = `
   l.modalidade_nome,
   fo.uf AS uf_fornecedor,
   fo.eh_fabricante,
+  (${IMPORTADOR_EXPR}) AS provavel_importador,
   (${PORTAL_EXPR}) AS portal,
   l.data_publicacao_pncp,
   i.numero_item,
