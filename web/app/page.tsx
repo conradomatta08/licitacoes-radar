@@ -44,6 +44,7 @@ export default async function Home({
     descricao: searchParams.descricao,
     produto: searchParams.produto,
     tipo: searchParams.tipo,
+    fabricante: searchParams.fabricante,
     uf: searchParams.uf,
     portal: searchParams.portal,
     dataInicial: searchParams.dataInicial,
@@ -63,6 +64,7 @@ export default async function Home({
   if (searchParams.descricao) paramsBase.set("descricao", searchParams.descricao);
   if (searchParams.produto) paramsBase.set("produto", searchParams.produto);
   if (searchParams.tipo) paramsBase.set("tipo", searchParams.tipo);
+  if (searchParams.fabricante) paramsBase.set("fabricante", searchParams.fabricante);
   if (searchParams.uf) paramsBase.set("uf", searchParams.uf);
   if (searchParams.portal) paramsBase.set("portal", searchParams.portal);
   if (searchParams.dataInicial) paramsBase.set("dataInicial", searchParams.dataInicial);
@@ -123,6 +125,14 @@ export default async function Home({
               <option value="">Material e serviço</option>
               <option value="M">Material</option>
               <option value="S">Serviço</option>
+            </select>
+          </div>
+          <div className="campo">
+            <label htmlFor="fabricante">Fabricante</label>
+            <select id="fabricante" name="fabricante" defaultValue={searchParams.fabricante ?? ""}>
+              <option value="">Todos</option>
+              <option value="sim">Só fabricantes</option>
+              <option value="nao">Só não fabricantes</option>
             </select>
           </div>
           <div className="campo campo-uf">
@@ -191,19 +201,20 @@ export default async function Home({
       <div className="table-wrapper">
         <table>
           <colgroup>
-            <col style={{ width: "12%" }} />
-            <col style={{ width: "9%" }} />
+            <col style={{ width: "11%" }} />
+            <col style={{ width: "8%" }} />
             <col style={{ width: "5%" }} />
-            <col style={{ width: "9%" }} />
+            <col style={{ width: "5%" }} />
+            <col style={{ width: "8%" }} />
             <col style={{ width: "5%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "4%" }} />
-            <col style={{ width: "10%" }} />
+            <col style={{ width: "9%" }} />
             <col style={{ width: "4%" }} />
-            <col style={{ width: "7%" }} />
+            <col style={{ width: "6%" }} />
             <col style={{ width: "8%" }} />
-            <col style={{ width: "7%" }} />
+            <col style={{ width: "6%" }} />
             <col style={{ width: "5%" }} />
           </colgroup>
           <thead>
@@ -211,6 +222,7 @@ export default async function Home({
               <th>Empresa vencedora</th>
               <th>CNPJ</th>
               <th>UF Fornecedor</th>
+              <th>Fabricante</th>
               <th>Órgão</th>
               <th>UF Órgão</th>
               <th>Portal</th>
@@ -232,6 +244,7 @@ export default async function Home({
                 <td>
                   {l.uf_fornecedor ? <span className="badge">{l.uf_fornecedor}</span> : "—"}
                 </td>
+                <td>{l.eh_fabricante === true ? "Sim" : l.eh_fabricante === false ? "Não" : "—"}</td>
                 <td title={l.orgao_nome}>{l.orgao_nome}</td>
                 <td>
                   <span className="badge">{l.uf}</span>
@@ -253,7 +266,7 @@ export default async function Home({
             ))}
             {linhas.length === 0 && (
               <tr>
-                <td colSpan={14}>Nenhum resultado encontrado para esses filtros.</td>
+                <td colSpan={15}>Nenhum resultado encontrado para esses filtros.</td>
               </tr>
             )}
           </tbody>
@@ -280,6 +293,7 @@ export default async function Home({
           {searchParams.descricao && <input type="hidden" name="descricao" value={searchParams.descricao} />}
           {searchParams.produto && <input type="hidden" name="produto" value={searchParams.produto} />}
           {searchParams.tipo && <input type="hidden" name="tipo" value={searchParams.tipo} />}
+          {searchParams.fabricante && <input type="hidden" name="fabricante" value={searchParams.fabricante} />}
           {searchParams.uf && <input type="hidden" name="uf" value={searchParams.uf} />}
           {searchParams.portal && <input type="hidden" name="portal" value={searchParams.portal} />}
           {searchParams.dataInicial && <input type="hidden" name="dataInicial" value={searchParams.dataInicial} />}

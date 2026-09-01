@@ -168,6 +168,15 @@ CREATE TABLE IF NOT EXISTS fornecedores (
   uf CHAR(2),
   atualizado_em TIMESTAMP NOT NULL DEFAULT now()
 );
+-- CNAE principal + flag "possui CNAE de fabricacao" (industria de
+-- transformacao, secao C do CNAE 2.0 - divisoes 10 a 33, confirmado no
+-- IBGE/CONCLA) - considera tambem os CNAEs secundarios, nao so o
+-- principal, porque "possui" pede qualquer um. Usado pro filtro/coluna
+-- Fabricante do dashboard. Populado por etl/sync_fornecedores.py junto
+-- com a uf (mesmo arquivo da Receita Federal, so mais colunas lidas).
+ALTER TABLE fornecedores ADD COLUMN IF NOT EXISTS cnae_fiscal_principal VARCHAR(7);
+ALTER TABLE fornecedores ADD COLUMN IF NOT EXISTS eh_fabricante BOOLEAN;
+CREATE INDEX IF NOT EXISTS idx_fornecedores_eh_fabricante ON fornecedores (eh_fabricante);
 
 CREATE TABLE IF NOT EXISTS catalogo_servico_item (
   codigo_servico INT PRIMARY KEY,

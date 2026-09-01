@@ -7,6 +7,7 @@ export interface Filtros {
   descricao?: string;
   produto?: string;
   tipo?: string;
+  fabricante?: string;
   uf?: string;
   portal?: string;
   dataInicial?: string;
@@ -28,6 +29,7 @@ export interface ResultadoLinha {
   municipio: string;
   modalidade_nome: string;
   uf_fornecedor: string | null;
+  eh_fabricante: boolean | null;
   portal: string | null;
   data_publicacao_pncp: string | null;
   numero_item: number;
@@ -101,6 +103,9 @@ function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
     // precisar juntar itens/licitacoes (ver contarResultados/schema.sql).
     condicoes.push(`r.uf = $${params.length}`);
   }
+  if (filtros.fabricante === "sim" || filtros.fabricante === "nao") {
+    condicoes.push(`fo.eh_fabricante = ${filtros.fabricante === "sim" ? "true" : "false"}`);
+  }
   if (filtros.portal) {
     params.push(`%${filtros.portal}%`);
     condicoes.push(`(${PORTAL_EXPR}) ILIKE $${params.length}`);
@@ -142,6 +147,7 @@ const SELECT_COLUNAS = `
   u.municipio,
   l.modalidade_nome,
   fo.uf AS uf_fornecedor,
+  fo.eh_fabricante,
   (${PORTAL_EXPR}) AS portal,
   l.data_publicacao_pncp,
   i.numero_item,
@@ -169,11 +175,13 @@ function construirFromContagem(filtros: Omit<Filtros, "pagina" | "porPagina">): 
   const precisaOrgao = !!filtros.q;
   const precisaLicitacao = precisaOrgao || !!filtros.portal;
   const precisaItem = precisaLicitacao || !!filtros.descricao || !!filtros.produto;
+  const precisaFornecedor = filtros.fabricante === "sim" || filtros.fabricante === "nao";
 
   let from = "FROM resultados_item r";
   if (precisaItem) from += " JOIN itens i ON i.id = r.item_id";
   if (precisaLicitacao) from += " JOIN licitacoes l ON l.id = i.licitacao_id";
   if (precisaOrgao) from += " JOIN orgaos o ON o.id = l.orgao_id";
+  if (precisaFornecedor) from += " JOIN fornecedores fo ON fo.cnpj = r.ni_fornecedor";
   return from;
 }
 
