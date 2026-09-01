@@ -6,6 +6,7 @@ export interface Filtros {
   q?: string;
   descricao?: string;
   produto?: string;
+  tipo?: string;
   uf?: string;
   portal?: string;
   dataInicial?: string;
@@ -32,6 +33,7 @@ export interface ResultadoLinha {
   numero_item: number;
   descricao_item: string;
   produto: string | null;
+  material_ou_servico: string | null;
   catalogo_codigo: number | null;
   catalogo_nome: string | null;
   ni_fornecedor: string;
@@ -87,6 +89,12 @@ function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
     params.push(`%${filtros.produto}%`);
     condicoes.push(`i.produto ILIKE $${params.length}`);
   }
+  if (filtros.tipo) {
+    params.push(filtros.tipo);
+    // r.material_ou_servico (nao i.*): duplicado direto em resultados_item
+    // pelo mesmo motivo do uf/data (ver contarResultados/schema.sql).
+    condicoes.push(`r.material_ou_servico = $${params.length}`);
+  }
   if (filtros.uf) {
     params.push(filtros.uf.toUpperCase());
     // r.uf (nao l.uf): duplicado direto em resultados_item pra filtrar sem
@@ -139,6 +147,7 @@ const SELECT_COLUNAS = `
   i.numero_item,
   i.descricao_item,
   i.produto,
+  r.material_ou_servico,
   i.catalogo_codigo,
   i.catalogo_nome,
   r.ni_fornecedor,

@@ -239,7 +239,7 @@ _RESULTADO_INSERT = """
         item_id, sequencial_resultado, ni_fornecedor, tipo_pessoa, nome_razao_social,
         valor_unitario_homologado, valor_total_homologado, quantidade_homologada,
         ordem_classificacao_srp, situacao_resultado_id, situacao_resultado_nome,
-        data_resultado, uf, data_publicacao_pncp
+        data_resultado, uf, data_publicacao_pncp, material_ou_servico
     )
 """
 _RESULTADO_CONFLITO = """
@@ -250,17 +250,18 @@ _RESULTADO_CONFLITO = """
         situacao_resultado_id = EXCLUDED.situacao_resultado_id,
         situacao_resultado_nome = EXCLUDED.situacao_resultado_nome,
         uf = EXCLUDED.uf,
-        data_publicacao_pncp = EXCLUDED.data_publicacao_pncp
+        data_publicacao_pncp = EXCLUDED.data_publicacao_pncp,
+        material_ou_servico = EXCLUDED.material_ou_servico
 """
 
 
 def _resolver_itens(conn: psycopg.Connection, pares: list) -> dict:
     """pares: lista de (licitacao_id, numero_item). Resolve, em lote via
     indice UNIQUE(licitacao_id, numero_item), o item_id junto com uf/data
-    de publicacao da licitacao (duplicados em resultados_item - ver
-    schema.sql) - tudo numa unica consulta em vez de depender de um cache
-    em memoria com todo o arquivo de itens (essa era a causa da falta de
-    memoria - ver upsert_itens_lote)."""
+    de publicacao da licitacao e material_ou_servico do item (duplicados em
+    resultados_item - ver schema.sql) - tudo numa unica consulta em vez de
+    depender de um cache em memoria com todo o arquivo de itens (essa era a
+    causa da falta de memoria - ver upsert_itens_lote)."""
     if not pares:
         return {}
     unicos = list(set(pares))
@@ -268,14 +269,17 @@ def _resolver_itens(conn: psycopg.Connection, pares: list) -> dict:
     params = [v for par in unicos for v in par]
     linhas = conn.execute(
         f"""
-        SELECT i.licitacao_id, i.numero_item, i.id, l.uf, l.data_publicacao_pncp
+        SELECT i.licitacao_id, i.numero_item, i.id, l.uf, l.data_publicacao_pncp, i.material_ou_servico
         FROM itens i
         JOIN licitacoes l ON l.id = i.licitacao_id
         WHERE (i.licitacao_id, i.numero_item) IN ({placeholder})
         """,
         params,
     ).fetchall()
-    return {(lic_id, num_item): (item_id, uf, data_pub) for lic_id, num_item, item_id, uf, data_pub in linhas}
+    return {
+        (lic_id, num_item): (item_id, uf, data_pub, mat_serv)
+        for lic_id, num_item, item_id, uf, data_pub, mat_serv in linhas
+    }
 
 
 def upsert_resultados_lote(conn: psycopg.Connection, linhas, cache_licitacao: dict) -> None:
@@ -325,9 +329,9 @@ def _gravar_lote_resultados(conn: psycopg.Connection, lote: dict) -> int:
             # O item pode nao ter vindo no arquivo de itens do mesmo periodo
             # (ex: resultado alterado sem o item ter sido re-exportado).
             continue
-        item_id, uf, data_pub = resolvido
-        linhas_finais[(item_id, seq)] = (item_id, seq) + valores + (uf, data_pub)
+        item_id, uf, data_pub, mat_serv = resolvido
+        linhas_finais[(item_id, seq)] = (item_id, seq) + valores + (uf, data_pub, mat_serv)
     if not linhas_finais:
         return 0
-    _inserir_lote(conn, _RESULTADO_INSERT, _RESULTADO_CONFLITO, 14, linhas_finais)
+    _inserir_lote(conn, _RESULTADO_INSERT, _RESULTADO_CONFLITO, 15, linhas_finais)
     return len(linhas_finais)

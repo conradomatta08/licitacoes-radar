@@ -43,6 +43,7 @@ export default async function Home({
     q: searchParams.q,
     descricao: searchParams.descricao,
     produto: searchParams.produto,
+    tipo: searchParams.tipo,
     uf: searchParams.uf,
     portal: searchParams.portal,
     dataInicial: searchParams.dataInicial,
@@ -61,6 +62,7 @@ export default async function Home({
   if (searchParams.q) paramsBase.set("q", searchParams.q);
   if (searchParams.descricao) paramsBase.set("descricao", searchParams.descricao);
   if (searchParams.produto) paramsBase.set("produto", searchParams.produto);
+  if (searchParams.tipo) paramsBase.set("tipo", searchParams.tipo);
   if (searchParams.uf) paramsBase.set("uf", searchParams.uf);
   if (searchParams.portal) paramsBase.set("portal", searchParams.portal);
   if (searchParams.dataInicial) paramsBase.set("dataInicial", searchParams.dataInicial);
@@ -114,6 +116,14 @@ export default async function Home({
               placeholder="Ex: notebook, nobreak"
               defaultValue={searchParams.produto ?? ""}
             />
+          </div>
+          <div className="campo">
+            <label htmlFor="tipo">Tipo</label>
+            <select id="tipo" name="tipo" defaultValue={searchParams.tipo ?? ""}>
+              <option value="">Material e serviço</option>
+              <option value="M">Material</option>
+              <option value="S">Serviço</option>
+            </select>
           </div>
           <div className="campo campo-uf">
             <label htmlFor="uf">UF</label>
@@ -187,7 +197,8 @@ export default async function Home({
             <col style={{ width: "9%" }} />
             <col style={{ width: "5%" }} />
             <col style={{ width: "8%" }} />
-            <col style={{ width: "9%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "4%" }} />
             <col style={{ width: "10%" }} />
             <col style={{ width: "4%" }} />
             <col style={{ width: "7%" }} />
@@ -204,6 +215,7 @@ export default async function Home({
               <th>UF Órgão</th>
               <th>Portal</th>
               <th>Produto/Serviço</th>
+              <th>Tipo</th>
               <th>CATMAT/CATSER</th>
               <th>Item</th>
               <th>Descrição</th>
@@ -226,6 +238,7 @@ export default async function Home({
                 </td>
                 <td>{l.portal ?? "Não encontrado"}</td>
                 <td title={l.produto ?? undefined}>{l.produto ?? "—"}</td>
+                <td>{l.material_ou_servico === "M" ? "Material" : l.material_ou_servico === "S" ? "Serviço" : "—"}</td>
                 <td title={l.catalogo_nome ?? undefined}>{l.catalogo_codigo ?? "—"}</td>
                 <td className="col-mono">{l.numero_item}</td>
                 <td title={l.descricao_item}>{l.descricao_item}</td>
@@ -240,7 +253,7 @@ export default async function Home({
             ))}
             {linhas.length === 0 && (
               <tr>
-                <td colSpan={13}>Nenhum resultado encontrado para esses filtros.</td>
+                <td colSpan={14}>Nenhum resultado encontrado para esses filtros.</td>
               </tr>
             )}
           </tbody>
@@ -266,6 +279,7 @@ export default async function Home({
           {searchParams.q && <input type="hidden" name="q" value={searchParams.q} />}
           {searchParams.descricao && <input type="hidden" name="descricao" value={searchParams.descricao} />}
           {searchParams.produto && <input type="hidden" name="produto" value={searchParams.produto} />}
+          {searchParams.tipo && <input type="hidden" name="tipo" value={searchParams.tipo} />}
           {searchParams.uf && <input type="hidden" name="uf" value={searchParams.uf} />}
           {searchParams.portal && <input type="hidden" name="portal" value={searchParams.portal} />}
           {searchParams.dataInicial && <input type="hidden" name="dataInicial" value={searchParams.dataInicial} />}

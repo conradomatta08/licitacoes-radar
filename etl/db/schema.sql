@@ -137,6 +137,10 @@ ALTER TABLE resultados_item ADD COLUMN IF NOT EXISTS uf CHAR(2);
 ALTER TABLE resultados_item ADD COLUMN IF NOT EXISTS data_publicacao_pncp DATE;
 CREATE INDEX IF NOT EXISTS idx_resultados_uf ON resultados_item (uf);
 CREATE INDEX IF NOT EXISTS idx_resultados_data_pub ON resultados_item (data_publicacao_pncp);
+-- material_ou_servico ('M'/'S') duplicado de itens pelo mesmo motivo -
+-- filtro Material/Servico do dashboard sem precisar juntar itens.
+ALTER TABLE resultados_item ADD COLUMN IF NOT EXISTS material_ou_servico VARCHAR(2);
+CREATE INDEX IF NOT EXISTS idx_resultados_material_ou_servico ON resultados_item (material_ou_servico);
 
 -- Catálogo oficial (CATMAT/CATSER), espelhado de dadosabertos.compras.gov.br
 -- (modulo-material/modulo-servico) - tabelas de referência pequenas
