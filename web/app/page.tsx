@@ -45,7 +45,8 @@ export default async function Home({
     produto: searchParams.produto,
     tipo: searchParams.tipo,
     fabricante: searchParams.fabricante,
-    uf: searchParams.uf,
+    ufFornecedor: searchParams.ufFornecedor,
+    ufOrgao: searchParams.ufOrgao,
     portal: searchParams.portal,
     dataInicial: searchParams.dataInicial,
     dataFinal: searchParams.dataFinal,
@@ -65,7 +66,8 @@ export default async function Home({
   if (searchParams.produto) paramsBase.set("produto", searchParams.produto);
   if (searchParams.tipo) paramsBase.set("tipo", searchParams.tipo);
   if (searchParams.fabricante) paramsBase.set("fabricante", searchParams.fabricante);
-  if (searchParams.uf) paramsBase.set("uf", searchParams.uf);
+  if (searchParams.ufFornecedor) paramsBase.set("ufFornecedor", searchParams.ufFornecedor);
+  if (searchParams.ufOrgao) paramsBase.set("ufOrgao", searchParams.ufOrgao);
   if (searchParams.portal) paramsBase.set("portal", searchParams.portal);
   if (searchParams.dataInicial) paramsBase.set("dataInicial", searchParams.dataInicial);
   if (searchParams.dataFinal) paramsBase.set("dataFinal", searchParams.dataFinal);
@@ -136,8 +138,26 @@ export default async function Home({
             </select>
           </div>
           <div className="campo campo-uf">
-            <label htmlFor="uf">UF</label>
-            <input id="uf" type="text" name="uf" placeholder="UF" maxLength={2} defaultValue={searchParams.uf ?? ""} />
+            <label htmlFor="ufFornecedor">UF Fornecedor</label>
+            <input
+              id="ufFornecedor"
+              type="text"
+              name="ufFornecedor"
+              placeholder="UF"
+              maxLength={2}
+              defaultValue={searchParams.ufFornecedor ?? ""}
+            />
+          </div>
+          <div className="campo campo-uf">
+            <label htmlFor="ufOrgao">UF Órgão</label>
+            <input
+              id="ufOrgao"
+              type="text"
+              name="ufOrgao"
+              placeholder="UF"
+              maxLength={2}
+              defaultValue={searchParams.ufOrgao ?? ""}
+            />
           </div>
           <div className="campo">
             <label htmlFor="portal">Portal</label>
@@ -294,7 +314,8 @@ export default async function Home({
           {searchParams.produto && <input type="hidden" name="produto" value={searchParams.produto} />}
           {searchParams.tipo && <input type="hidden" name="tipo" value={searchParams.tipo} />}
           {searchParams.fabricante && <input type="hidden" name="fabricante" value={searchParams.fabricante} />}
-          {searchParams.uf && <input type="hidden" name="uf" value={searchParams.uf} />}
+          {searchParams.ufFornecedor && <input type="hidden" name="ufFornecedor" value={searchParams.ufFornecedor} />}
+          {searchParams.ufOrgao && <input type="hidden" name="ufOrgao" value={searchParams.ufOrgao} />}
           {searchParams.portal && <input type="hidden" name="portal" value={searchParams.portal} />}
           {searchParams.dataInicial && <input type="hidden" name="dataInicial" value={searchParams.dataInicial} />}
           {searchParams.dataFinal && <input type="hidden" name="dataFinal" value={searchParams.dataFinal} />}

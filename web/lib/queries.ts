@@ -8,7 +8,8 @@ export interface Filtros {
   produto?: string;
   tipo?: string;
   fabricante?: string;
-  uf?: string;
+  ufFornecedor?: string;
+  ufOrgao?: string;
   portal?: string;
   dataInicial?: string;
   dataFinal?: string;
@@ -97,14 +98,18 @@ function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
     // pelo mesmo motivo do uf/data (ver contarResultados/schema.sql).
     condicoes.push(`r.material_ou_servico = $${params.length}`);
   }
-  if (filtros.uf) {
-    params.push(filtros.uf.toUpperCase());
+  if (filtros.ufOrgao) {
+    params.push(filtros.ufOrgao.toUpperCase());
     // r.uf (nao l.uf): duplicado direto em resultados_item pra filtrar sem
     // precisar juntar itens/licitacoes (ver contarResultados/schema.sql).
     condicoes.push(`r.uf = $${params.length}`);
   }
   if (filtros.fabricante === "sim" || filtros.fabricante === "nao") {
     condicoes.push(`fo.eh_fabricante = ${filtros.fabricante === "sim" ? "true" : "false"}`);
+  }
+  if (filtros.ufFornecedor) {
+    params.push(filtros.ufFornecedor.toUpperCase());
+    condicoes.push(`fo.uf = $${params.length}`);
   }
   if (filtros.portal) {
     params.push(`%${filtros.portal}%`);
@@ -175,7 +180,7 @@ function construirFromContagem(filtros: Omit<Filtros, "pagina" | "porPagina">): 
   const precisaOrgao = !!filtros.q;
   const precisaLicitacao = precisaOrgao || !!filtros.portal;
   const precisaItem = precisaLicitacao || !!filtros.descricao || !!filtros.produto;
-  const precisaFornecedor = filtros.fabricante === "sim" || filtros.fabricante === "nao";
+  const precisaFornecedor = filtros.fabricante === "sim" || filtros.fabricante === "nao" || !!filtros.ufFornecedor;
 
   let from = "FROM resultados_item r";
   if (precisaItem) from += " JOIN itens i ON i.id = r.item_id";
