@@ -16,7 +16,8 @@ function formatarDataIso(valor: unknown): string {
 
 function lerFiltros(sp: URLSearchParams) {
   return {
-    q: sp.get("q") ?? undefined,
+    empresa: sp.get("empresa") ?? undefined,
+    cnpj: sp.get("cnpj") ?? undefined,
     descricao: sp.get("descricao") ?? undefined,
     produto: sp.get("produto") ?? undefined,
     tipo: sp.get("tipo") ?? undefined,

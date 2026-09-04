@@ -3,7 +3,8 @@ import { pool } from "./db";
 export type Ordenacao = "valor_desc" | "valor_asc";
 
 export interface Filtros {
-  q?: string;
+  empresa?: string;
+  cnpj?: string;
   descricao?: string;
   produto?: string;
   tipo?: string;
@@ -86,10 +87,18 @@ function montarFiltros(filtros: Omit<Filtros, "pagina" | "porPagina">) {
   const condicoes: string[] = [];
   const params: unknown[] = [];
 
-  if (filtros.q) {
-    params.push(`%${filtros.q}%`);
-    const idx = params.length;
-    condicoes.push(`(r.nome_razao_social ILIKE $${idx} OR r.ni_fornecedor ILIKE $${idx} OR o.razao_social ILIKE $${idx})`);
+  if (filtros.empresa) {
+    params.push(`%${filtros.empresa}%`);
+    condicoes.push(`r.nome_razao_social ILIKE $${params.length}`);
+  }
+  if (filtros.cnpj) {
+    // Remove pontuacao (o CNPJ e guardado so com digitos) pra aceitar
+    // busca formatada ("12.345.678/0001-99") ou so numeros.
+    const digitos = filtros.cnpj.replace(/\D/g, "");
+    if (digitos) {
+      params.push(`%${digitos}%`);
+      condicoes.push(`r.ni_fornecedor ILIKE $${params.length}`);
+    }
   }
   if (filtros.descricao) {
     params.push(`%${filtros.descricao}%`);
@@ -193,12 +202,12 @@ const SELECT_COLUNAS = `
 // entao a maioria das buscas nem chega a tocar itens/licitacoes/orgaos.
 // Sem isso (JOIN fixo com as 4 tabelas sempre) filtrar so por UF chegou a
 // levar 2-13s pra contar ~580 mil linhas batendo em 3 tabelas de milhoes
-// de linhas a toa - medido em 2026-08-30. Only itens/licitacoes/orgaos
-// entram quando descricao/produto (itens), portal (licitacoes) ou q
-// (orgaos.razao_social) estao no filtro.
+// de linhas a toa - medido em 2026-08-30. itens/licitacoes entram so
+// quando descricao/produto (itens) ou portal (licitacoes) estao no
+// filtro - empresa/cnpj ja sao direto em resultados_item, e orgaos nao
+// tem mais nenhum filtro que precise dele.
 function construirFromContagem(filtros: Omit<Filtros, "pagina" | "porPagina">): string {
-  const precisaOrgao = !!filtros.q;
-  const precisaLicitacao = precisaOrgao || !!filtros.portal;
+  const precisaLicitacao = !!filtros.portal;
   const precisaItem = precisaLicitacao || !!filtros.descricao || !!filtros.produto;
   // "importador" sozinho nao precisa de fo (so olha r.nome_razao_social).
   const precisaFornecedor =
@@ -210,7 +219,6 @@ function construirFromContagem(filtros: Omit<Filtros, "pagina" | "porPagina">): 
   let from = "FROM resultados_item r";
   if (precisaItem) from += " JOIN itens i ON i.id = r.item_id";
   if (precisaLicitacao) from += " JOIN licitacoes l ON l.id = i.licitacao_id";
-  if (precisaOrgao) from += " JOIN orgaos o ON o.id = l.orgao_id";
   if (precisaFornecedor) from += " JOIN fornecedores fo ON fo.cnpj = r.ni_fornecedor";
   return from;
 }

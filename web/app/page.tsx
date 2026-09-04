@@ -40,7 +40,8 @@ export default async function Home({
 }) {
   const pagina = Math.max(1, parseInt(searchParams.pagina ?? "1", 10) || 1);
   const filtros = {
-    q: searchParams.q,
+    empresa: searchParams.empresa,
+    cnpj: searchParams.cnpj,
     descricao: searchParams.descricao,
     produto: searchParams.produto,
     tipo: searchParams.tipo,
@@ -61,7 +62,8 @@ export default async function Home({
   const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
   const paramsBase = new URLSearchParams();
-  if (searchParams.q) paramsBase.set("q", searchParams.q);
+  if (searchParams.empresa) paramsBase.set("empresa", searchParams.empresa);
+  if (searchParams.cnpj) paramsBase.set("cnpj", searchParams.cnpj);
   if (searchParams.descricao) paramsBase.set("descricao", searchParams.descricao);
   if (searchParams.produto) paramsBase.set("produto", searchParams.produto);
   if (searchParams.tipo) paramsBase.set("tipo", searchParams.tipo);
@@ -98,8 +100,18 @@ export default async function Home({
       <form className="painel-filtros" method="get">
         <div className="grade-filtros">
           <div className="campo">
-            <label htmlFor="q">Empresa ou CNPJ</label>
-            <input id="q" type="text" name="q" placeholder="Nome ou CNPJ" defaultValue={searchParams.q ?? ""} />
+            <label htmlFor="empresa">Empresa</label>
+            <input
+              id="empresa"
+              type="text"
+              name="empresa"
+              placeholder="Nome da empresa"
+              defaultValue={searchParams.empresa ?? ""}
+            />
+          </div>
+          <div className="campo">
+            <label htmlFor="cnpj">CNPJ</label>
+            <input id="cnpj" type="text" name="cnpj" placeholder="CNPJ" defaultValue={searchParams.cnpj ?? ""} />
           </div>
           <div className="campo">
             <label htmlFor="descricao">Descrição</label>
@@ -314,7 +326,8 @@ export default async function Home({
         {pagina < totalPaginas && <a href={hrefPagina(pagina + 1)}>Próxima &rarr;</a>}
 
         <form className="ir-para-pagina" method="get">
-          {searchParams.q && <input type="hidden" name="q" value={searchParams.q} />}
+          {searchParams.empresa && <input type="hidden" name="empresa" value={searchParams.empresa} />}
+          {searchParams.cnpj && <input type="hidden" name="cnpj" value={searchParams.cnpj} />}
           {searchParams.descricao && <input type="hidden" name="descricao" value={searchParams.descricao} />}
           {searchParams.produto && <input type="hidden" name="produto" value={searchParams.produto} />}
           {searchParams.tipo && <input type="hidden" name="tipo" value={searchParams.tipo} />}
