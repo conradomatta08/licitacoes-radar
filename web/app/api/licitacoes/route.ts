@@ -48,6 +48,7 @@ const COLUNAS_EXPORT: { titulo: string; valor: (l: ResultadoLinha) => string | n
   { titulo: "CATMAT/CATSER", valor: (l) => (l.catalogo_codigo ? `${l.catalogo_codigo} - ${l.catalogo_nome}` : "") },
   { titulo: "Item", valor: (l) => l.numero_item ?? "" },
   { titulo: "Descrição do item", valor: (l) => l.descricao_item ?? "" },
+  { titulo: "Quantidade", valor: (l) => (l.quantidade_homologada ?? "") as number },
   { titulo: "Valor unitário homologado", valor: (l) => (l.valor_unitario_homologado ?? "") as number },
   { titulo: "Data de divulgação no PNCP", valor: (l) => formatarDataIso(l.data_publicacao_pncp) },
   { titulo: "Link PNCP", valor: (l) => l.link_pncp ?? "" },

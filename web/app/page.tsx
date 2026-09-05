@@ -13,6 +13,11 @@ function formatarData(valor: string | null) {
   return new Date(valor).toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
+function formatarQuantidade(valor: number | null) {
+  if (valor === null || valor === undefined) return "—";
+  return Number(valor).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+}
+
 // Paginação com janela deslizante: sempre mostra a primeira e a última
 // página, mais uma janela ao redor da página atual, com "..." nos vãos.
 // Evita renderizar milhares de números quando há muitas páginas.
@@ -245,9 +250,10 @@ export default async function Home({
             <col style={{ width: "8%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "4%" }} />
-            <col style={{ width: "9%" }} />
+            <col style={{ width: "8%" }} />
             <col style={{ width: "4%" }} />
             <col style={{ width: "6%" }} />
+            <col style={{ width: "4%" }} />
             <col style={{ width: "8%" }} />
             <col style={{ width: "6%" }} />
             <col style={{ width: "5%" }} />
@@ -267,6 +273,7 @@ export default async function Home({
               <th>CATMAT/CATSER</th>
               <th>Item</th>
               <th>Descrição</th>
+              <th>Quantidade</th>
               <th>Valor homologado</th>
               <th>Divulgação PNCP</th>
               <th>Edital</th>
@@ -292,6 +299,7 @@ export default async function Home({
                 <td title={l.catalogo_nome ?? undefined}>{l.catalogo_codigo ?? "—"}</td>
                 <td className="col-mono">{l.numero_item}</td>
                 <td title={l.descricao_item}>{l.descricao_item}</td>
+                <td className="col-mono">{formatarQuantidade(l.quantidade_homologada)}</td>
                 <td className="col-mono">{formatarMoeda(l.valor_unitario_homologado)}</td>
                 <td>{formatarData(l.data_publicacao_pncp)}</td>
                 <td>
@@ -303,7 +311,7 @@ export default async function Home({
             ))}
             {linhas.length === 0 && (
               <tr>
-                <td colSpan={16}>Nenhum resultado encontrado para esses filtros.</td>
+                <td colSpan={17}>Nenhum resultado encontrado para esses filtros.</td>
               </tr>
             )}
           </tbody>
