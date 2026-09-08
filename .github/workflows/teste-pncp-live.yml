@@ -13,7 +13,7 @@ jobs:
           for tentativa in 1 2 3; do
             echo "--- tentativa $tentativa ---"
             codigo=$(curl -s -o resposta.json -w "%{http_code}" \
-              "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=20260901&dataFinal=20260908&codigoModalidadeContratacao=6&pagina=1&tamanhoPagina=5")
+              "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=20260901&dataFinal=20260908&codigoModalidadeContratacao=6&pagina=1&tamanhoPagina=10")
             echo "HTTP: $codigo"
             if [ "$codigo" = "200" ]; then
               echo "SUCESSO na tentativa $tentativa"
