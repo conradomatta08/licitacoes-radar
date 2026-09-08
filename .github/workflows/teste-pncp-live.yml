@@ -1,0 +1,27 @@
+name: TESTE - API ao vivo do PNCP (diagnostico, apagar depois)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  teste:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Testar API de consulta do PNCP a partir do runner (nuvem)
+        run: |
+          for tentativa in 1 2 3; do
+            echo "--- tentativa $tentativa ---"
+            codigo=$(curl -s -o resposta.json -w "%{http_code}" \
+              "https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=20260901&dataFinal=20260908&codigoModalidadeContratacao=6&pagina=1&tamanhoPagina=5")
+            echo "HTTP: $codigo"
+            if [ "$codigo" = "200" ]; then
+              echo "SUCESSO na tentativa $tentativa"
+              python3 -c "import json; d=json.load(open('resposta.json')); print('totalRegistros:', d.get('totalRegistros')); print('primeira dataPublicacaoPncp:', d['data'][0]['dataPublicacaoPncp'] if d.get('data') else None)"
+              exit 0
+            fi
+            cat resposta.json || true
+            sleep 5
+          done
+          echo "FALHOU nas 3 tentativas"
+          exit 1
