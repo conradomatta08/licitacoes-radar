@@ -1,0 +1,73 @@
+name: Backfill via API ao vivo (PNCP)
+
+on:
+  workflow_dispatch:
+    inputs:
+      data_inicio:
+        description: "Primeiro dia a carregar (AAAA-MM-DD)"
+        required: true
+        default: "2026-07-16"
+      data_fim:
+        description: "Ultimo dia a carregar (AAAA-MM-DD)"
+        required: true
+      dias_por_bloco:
+        description: "Dias por job (cada job dura no maximo 6h)"
+        required: true
+        default: "5"
+
+concurrency:
+  group: backfill-live
+  cancel-in-progress: false
+
+jobs:
+  planejar:
+    runs-on: ubuntu-latest
+    outputs:
+      blocos: ${{ steps.blocos.outputs.blocos }}
+    steps:
+      - id: blocos
+        env:
+          DATA_INICIO: ${{ inputs.data_inicio }}
+          DATA_FIM: ${{ inputs.data_fim }}
+          DIAS_POR_BLOCO: ${{ inputs.dias_por_bloco }}
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import datetime as dt, json, os
+          ini = dt.date.fromisoformat(os.environ["DATA_INICIO"])
+          fim = dt.date.fromisoformat(os.environ["DATA_FIM"])
+          passo = int(os.environ["DIAS_POR_BLOCO"])
+          blocos = []
+          d = ini
+          while d <= fim:
+              f = min(d + dt.timedelta(days=passo - 1), fim)
+              blocos.append({"inicio": d.isoformat(), "fim": f.isoformat()})
+              d = f + dt.timedelta(days=1)
+          print("blocos=" + json.dumps(blocos))
+          EOF
+
+  backfill:
+    needs: planejar
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        bloco: ${{ fromJSON(needs.planejar.outputs.blocos) }}
+    defaults:
+      run:
+        working-directory: etl
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Backfill ${{ matrix.bloco.inicio }} a ${{ matrix.bloco.fim }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python -u backfill_live.py ${{ matrix.bloco.inicio }} ${{ matrix.bloco.fim }}

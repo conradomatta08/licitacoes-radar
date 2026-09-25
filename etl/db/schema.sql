@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS licitacoes (
   unidade_id INT REFERENCES unidades_orgao(id),
   ano_compra INT,
   sequencial_compra INT,
-  numero_compra VARCHAR(30),
-  processo VARCHAR(50),
+  numero_compra TEXT,
+  processo TEXT,
   modalidade_id INT,
   modalidade_nome TEXT,
   modo_disputa_nome TEXT,
@@ -55,6 +55,14 @@ CREATE TABLE IF NOT EXISTS licitacoes (
 );
 CREATE INDEX IF NOT EXISTS idx_licitacoes_uf ON licitacoes (uf);
 CREATE INDEX IF NOT EXISTS idx_licitacoes_data_pub ON licitacoes (data_publicacao_pncp);
+-- numero_compra/processo eram VARCHAR(30)/VARCHAR(50) - o arquivo em lote
+-- do Compras.gov.br nunca estourou isso, mas a API ao vivo do PNCP trouxe
+-- um numero_compra mais longo que 30 chars e quebrou o INSERT em lote
+-- inteiro (confirmado em 2026-09-09, ver pipeline/load_live.py). Sem
+-- limite de tamanho real pra esses campos (sao texto livre, formato varia
+-- por orgao), TEXT evita esse tipo de erro de vez.
+ALTER TABLE licitacoes ALTER COLUMN numero_compra TYPE TEXT;
+ALTER TABLE licitacoes ALTER COLUMN processo TYPE TEXT;
 
 CREATE TABLE IF NOT EXISTS itens (
   id BIGSERIAL PRIMARY KEY,
