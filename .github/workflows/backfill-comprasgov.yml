@@ -1,0 +1,39 @@
+name: Backfill via API Compras.gov.br
+
+on:
+  workflow_dispatch:
+    inputs:
+      data_inicio:
+        description: "Primeiro dia a carregar (AAAA-MM-DD)"
+        required: true
+      data_fim:
+        description: "Ultimo dia a carregar (AAAA-MM-DD)"
+        required: true
+
+concurrency:
+  group: ingest-incremental
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    defaults:
+      run:
+        working-directory: etl
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Backfill ${{ inputs.data_inicio }} a ${{ inputs.data_fim }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATA_INICIO: ${{ inputs.data_inicio }}
+          DATA_FIM: ${{ inputs.data_fim }}
+        run: python -u backfill_comprasgov.py "$DATA_INICIO" "$DATA_FIM"

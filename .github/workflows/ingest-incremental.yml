@@ -12,7 +12,7 @@ concurrency:
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: etl
@@ -29,4 +29,4 @@ jobs:
       - name: Rodar ingestão incremental
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: python run_ingest.py
+        run: python -u run_ingest_comprasgov.py

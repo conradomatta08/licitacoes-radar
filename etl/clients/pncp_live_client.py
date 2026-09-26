@@ -25,7 +25,7 @@ _TAMANHO_PAGINA = 50
 # Pausa fixa antes de cada chamada - reduz a frequencia de "429 Too Many
 # Requests" (confirmado acontecendo bastante em 2026-09-09 num loop sem
 # pausa nenhuma entre paginas) em vez de so reagir depois de ja apanhar.
-_PAUSA_ENTRE_CHAMADAS = 0.3
+_PAUSA_ENTRE_CHAMADAS = 0.6
 
 # Modalidades de contratacao do PNCP (GET /v1/modalidades, tambem publico) -
 # fixo aqui porque a lista quase nunca muda (ver docs/plano).
@@ -50,7 +50,11 @@ def _get(url: str, params: dict):
         except (httpx.TransportError, httpx.HTTPStatusError, ValueError) as e:
             if tentativa == _TENTATIVAS:
                 raise
-            espera = min(20, 3 * tentativa)
+            limitado = isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 429
+            # 429 = limite de requisicoes do PNCP (confirmado em 15/09/2026
+            # durante ~1.100 consultas seguidas): espera bem mais que nos
+            # outros erros, senao as 5 tentativas se esgotam no mesmo minuto.
+            espera = min(90, 20 * tentativa) if limitado else min(20, 3 * tentativa)
             print(f"  [aviso] falha ao chamar {url} {params} (tentativa {tentativa}/{_TENTATIVAS}): {e} - tentando de novo em {espera}s")
             time.sleep(espera)
 
@@ -77,6 +81,13 @@ def buscar_contratacoes(data_inicial: str, data_final: str, modalidade: int):
         if pagina >= corpo.get("totalPaginas", 0):
             return
         pagina += 1
+
+
+def buscar_contratacao(cnpj: str, ano: int, sequencial: int) -> dict | None:
+    """Detalhe de uma contratacao (mesmo formato dos itens de
+    buscar_contratacoes). Usa /api/consulta, nao /api/pncp - o segundo
+    responde 301 sem corpo pra esse caminho (confirmado em 2026-09-26)."""
+    return _get(f"{_BASE_CONSULTA}/orgaos/{cnpj}/compras/{ano}/{sequencial}", {})
 
 
 def buscar_itens(cnpj: str, ano: int, sequencial: int) -> list[dict]:
