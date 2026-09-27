@@ -9,6 +9,8 @@ aqui buscamos os itens de cada contratacao logo depois de descobri-la
 pequeno (nunca as centenas de milhares de linhas de um CSV anual), entao
 nao ha risco de estourar memoria acumulando essas listas."""
 
+import time
+
 import httpx
 
 import clients.pncp_live_client as live
@@ -153,6 +155,95 @@ def carregar_periodo_live(data_inicial: str, data_final: str) -> None:
         cache_licitacao = load.upsert_licitacoes_lote(conn, linhas_compra, {}, {})
         load.upsert_itens_lote(conn, linhas_item, cache_licitacao)
         load.upsert_resultados_lote(conn, linhas_resultado, cache_licitacao)
+
+
+_TENTATIVAS_PASSADA = 3
+_LOTE_ITENS = 1500
+
+
+def recuperar_dia(dia) -> None:
+    """Recupera um dia inteiro pelo PNCP quando a fonte principal
+    (Compras.gov.br) veio incompleta (ex: 21/07 e 04/09/2026). Diferente de
+    carregar_periodo_live: grava cada bloco assim que chega (nada se perde
+    se o processo cair), retoma de onde parou (so busca itens das licitacoes
+    do dia que ainda nao tem nenhum, entao rodar de novo e seguro e barato)
+    e nao busca resultados - esses entram depois pela fase 'resultados' do
+    Compras.gov.br, que e bem mais rapida que uma chamada por item."""
+    from pipeline.load_comprasgov import _mapa_modalidade
+
+    data_str = dia.strftime("%Y%m%d")
+    with get_conn() as conn:
+        mapa = _mapa_modalidade(conn)
+    cache_orgao: dict = {}
+    cache_unidade: dict = {}
+
+    print(f"[{dia}] descobrindo contratacoes no PNCP...")
+    pendentes = list(live.MODALIDADES)
+    for passada in range(1, _TENTATIVAS_PASSADA + 1):
+        falhas = []
+        for modalidade in pendentes:
+            try:
+                compras = []
+                for c in live.buscar_contratacoes(data_str, data_str, modalidade):
+                    linha = _adaptar_compra(c, bool(c.get("existeResultado")))
+                    linha["codigo_modalidade"] = mapa.get(c.get("modalidadeNome"), c.get("modalidadeId"))
+                    compras.append(linha)
+            except (httpx.TransportError, httpx.HTTPStatusError, ValueError) as e:
+                falhas.append(modalidade)
+                print(f"  [aviso] modalidade {modalidade} falhou na passada {passada}: {e}")
+                continue
+            if compras:
+                with get_conn() as conn:
+                    load.upsert_licitacoes_lote(conn, compras, cache_orgao, cache_unidade)
+                print(f"  modalidade {modalidade}: {len(compras)} contratacoes")
+        pendentes = falhas
+        if not pendentes:
+            break
+        time.sleep(60)
+    if pendentes:
+        raise RuntimeError(f"[{dia}] modalidades sem descoberta apos {_TENTATIVAS_PASSADA} passadas: {pendentes}")
+
+    for passada in range(1, _TENTATIVAS_PASSADA + 1):
+        with get_conn() as conn:
+            sem_itens = conn.execute(
+                """
+                SELECT l.numero_controle_pncp, l.id, o.cnpj, l.ano_compra, l.sequencial_compra
+                FROM licitacoes l JOIN orgaos o ON o.id = l.orgao_id
+                WHERE l.data_publicacao_pncp = %s
+                  AND NOT EXISTS (SELECT 1 FROM itens i WHERE i.licitacao_id = l.id)
+                ORDER BY l.id
+                """,
+                (dia,),
+            ).fetchall()
+        print(f"[{dia}] passada {passada}: {len(sem_itens)} licitacoes sem itens")
+        if not sem_itens:
+            return
+        lote: list = []
+        cache_licitacao: dict = {}
+        erros = 0
+        t0 = time.time()
+        for n, (numero_controle, licitacao_id, cnpj, ano, seq) in enumerate(sem_itens, 1):
+            try:
+                itens_json = live.buscar_itens(cnpj, ano, seq)
+            except (httpx.TransportError, httpx.HTTPStatusError, ValueError):
+                erros += 1
+                continue
+            cache_licitacao[numero_controle] = licitacao_id
+            lote.extend(_adaptar_item(it, numero_controle) for it in itens_json)
+            if len(lote) >= _LOTE_ITENS:
+                with get_conn() as conn:
+                    load.upsert_itens_lote(conn, lote, cache_licitacao)
+                lote = []
+            if n % 200 == 0:
+                print(f"  [{dia}] {n}/{len(sem_itens)} licitacoes ({time.time() - t0:.0f}s, {erros} com erro)")
+        if lote:
+            with get_conn() as conn:
+                load.upsert_itens_lote(conn, lote, cache_licitacao)
+        if erros == 0:
+            return
+        print(f"[{dia}] {erros} licitacoes com erro na passada {passada}; tentando de novo em 60s")
+        time.sleep(60)
+    raise RuntimeError(f"[{dia}] ainda ha licitacoes sem itens por erro apos {_TENTATIVAS_PASSADA} passadas")
 
 
 def reprocessar_pendentes(dias_max: int = 90, limite: int = 500) -> None:

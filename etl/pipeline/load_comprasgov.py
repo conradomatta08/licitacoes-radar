@@ -223,7 +223,7 @@ def _buscar_contratacoes_faltantes(itens: list, cache_orgao: dict, cache_unidade
             nao_encontradas += 1
             continue
         linha = adaptar_pncp(c, bool(c.get("existeResultado")))
-        linha["codigo_modalidade"] = mapa.get(c.get("modalidadeNome"))
+        linha["codigo_modalidade"] = mapa.get(c.get("modalidadeNome"), c.get("modalidadeId"))
         linhas.append(linha)
         obtidas += 1
         if len(linhas) >= _LOTE_PLANO_B:

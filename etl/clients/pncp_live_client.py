@@ -43,7 +43,9 @@ def _get(url: str, params: dict):
         try:
             time.sleep(_PAUSA_ENTRE_CHAMADAS)
             resp = httpx.get(url, params=params, timeout=_TIMEOUT, follow_redirects=True)
-            if resp.status_code == 404:
+            # 204 = "sem registros" (modalidade sem contratacoes no dia,
+            # confirmado em 26/09/2026) - nao e falha, nao adianta repetir.
+            if resp.status_code in (204, 404):
                 return None
             resp.raise_for_status()
             return resp.json()
